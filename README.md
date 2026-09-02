@@ -110,47 +110,97 @@
 
 <div align="center">
 
-<img src="Banner.png" alt="BitChord banner" width="100%" />
+<h2>📥 Installation Guide for Car Stereos</h2>
 
-<h1><a id="features"></a>Features</h1>
+<p><em>Car head units operate differently from standard smartphones. To install the Car Edition, please utilize one of the two seamless methods outlined below.</em></p>
 
-<table>
+</div>
+
+<br/>
+
+<table align="center" width="100%">
   <tr>
-    <td width="50%" valign="top">
-
-#### Playback
-- **Search, browse and play** anything available on YouTube Music.
-- **Hi-Res lossless audio** — FLAC/ALAC from a configured module source, with YouTube Music as fallback.
-- **Gapless playback with true crossfade**, adjustable 0–12s.
-- **Automix [Beta]** — DJ-style transitions with beat-matching and tempo-stretching.
-- **Offline downloads** — save tracks with embedded metadata.
-- **Local music library** integration.
-- **Background playback** via a proper foreground media session.
-
-#### Experience
-- **Animated album canvas** — motion artwork on the now-playing screen.
-- **Word-synced lyrics** — word/syllable-level highlighting from multiple sources.
-- **Dynamic, artwork-driven theming** — Material palette extracted from album art.
-- **Frosted-glass UI** — Telegram-style translucent bars via Haze, Material 3 theming.
-
+    <td valign="top" width="50%">
+      <h3>🛠️ Method 1: USB Flash Drive</h3>
+      <p><em>The most reliable, offline installation method.</em></p>
+      <hr>
+      <ol>
+        <li><strong>Download</strong> the latest <code>BitChord-CarEdition.apk</code> from the <a href="https://github.com/aniketlab/BitChord-CarEdition/releases">Releases</a> page to your PC.</li>
+        <li><strong>Transfer</strong> the <code>.apk</code> file to a standard formatted USB Flash Drive.</li>
+        <li><strong>Connect</strong> the USB drive to your Car's dashboard USB port.</li>
+        <li><strong>Locate & Install:</strong> Open your car's native <b>File Manager</b>, navigate to the USB storage, and tap the APK to install.</li>
+      </ol>
+      <blockquote><small>⚠️ <i>Ensure "Install from Unknown Sources" is enabled in your Android System Settings.</i></small></blockquote>
     </td>
-    <td width="50%" valign="top">
-
-#### Connectivity & Accounts
-- **Sign in with your Google account** for personalized content.
-- **Discord Rich Presence** — in-app login, live track/artist/album and progress.
-- **Scrobbling** to Last.fm and ListenBrainz.
-- **Pluggable sources** — add, edit, test and health-check module sources.
-
-#### Controls & Tweaks
-- **Per-network audio quality** — separate quality ceilings for Wi-Fi and mobile data.
-- **Playback speed control** (0.5×–2.0×) and **skip silence**.
-- **Sleep timer** — fixed presets or "stop after this track".
-- **System equalizer** integration.
-- **Stats for nerds** — codec, bit depth, sample rate, and more on the now-playing screen.
-
+    <td valign="top" width="50%">
+      <h3>📲 Method 2: Wireless (Send Anywhere)</h3>
+      <p><em>Fast, wireless transfer directly from your smartphone.</em></p>
+      <hr>
+      <ol>
+        <li><strong>Download</strong> the APK directly to your primary Android phone.</li>
+        <li><strong>Install <a href="https://play.google.com/store/apps/details?id=com.estmob.android.sendanywhere">Send Anywhere</a></strong> from the Play Store on <b>both</b> your Phone and your Car Stereo.</li>
+        <li><strong>Initiate Transfer:</strong> Open the app on your phone, select the <code>.apk</code>, and tap <b>Send</b> to generate a 6-digit key.</li>
+        <li><strong>Receive & Install:</strong> Open the app on your Car Stereo, tap <b>Receive</b>, enter the 6-digit key, and tap the downloaded file to install.</li>
+        <li><strong>Enjoy:</strong> Once the transfer completes, simply tap the file to install it directly on your dashboard!</li>
+      </ol>
     </td>
   </tr>
 </table>
 
+<br/>
+<div align="center">
+  <p>🎉 <b>That's it! You are now ready to enjoy an uncompromised audio experience on the road.</b></p>
+</div>
+
+---
+
+<div align="center">
+  <h2>🔧 Troubleshooting & FAQs</h2>
+  <p><em>Having trouble getting it to run on your dashboard? Try these quick fixes.</em></p>
+</div>
+
+<table align="center" width="100%">
+  <tr>
+    <td><b>❌ Issue: "App not installed" when using USB</b></td>
+  </tr>
+  <tr>
+    <td><b>💡 Fix:</b> Ensure your USB Flash Drive is formatted to <b>FAT32</b>. Car head units often struggle to read APK files from NTFS or exFAT formatted drives. Alternatively, try Method 2 (Wireless).</td>
+  </tr>
+  <tr>
+    <td><b>❌ Issue: App crashes immediately upon opening</b></td>
+  </tr>
+  <tr>
+    <td><b>💡 Fix:</b> Go to your car's <i>Settings > Apps > BitChord</i> and manually grant it all necessary permissions (like Storage). Some head units aggressively kill apps without explicit permissions.</td>
+  </tr>
+</table>
+
+---
+
+<div align="center">
+  <h2>🤝 Community & Feedback</h2>
+  
+  <p><em>I designed this project keeping all Android car stereo users in mind. You do NOT need to have the Nakamichi NAM5360 Pro for this to work!</em></p>
+
+  <p>Please give it a try on your specific car head unit. If it works smoothly—awesome! If it doesn't install or you face any bugs, please <a href="https://github.com/aniketlab/BitChord-CarEdition/issues">Open an Issue</a> so I can look into it and add support for your device.<br/>
+  <b>Make sure to mention your Head Unit Model, Screen Resolution, and Android Version.</b></p>
+</div>
+
+---
+
+<div align="center">
+  <h2>💖 Support the Original Developer</h2>
+  
+  <p>This Car Edition exists thanks to the incredible foundational work of <b>Kushagra Singh</b>. BitChord is free and always will be. If it has earned a spot on your daily commute, please consider supporting the original creator:</p>
+
+  <a href="https://ko-fi.com/kushagrasinghx"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="ko-fi"></a>
+  <a href="https://paypal.me/kuxhagrasingh"><img src="https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="PayPal"></a>
+</div>
+
+---
+
+<div align="center">
+  <h2>⚖️ License & Legal</h2>
+  
+  <p>This project is licensed under the <b>GNU General Public License v3.0 (GPLv3)</b>. See the <a href="LICENSE">LICENSE</a> file for details.</p>
+  <p><small><i>BitChord is an independent, community-driven third-party audio player. It is not associated with Google LLC, YouTube Music, or Nakamichi.</i></small></p>
 </div>
