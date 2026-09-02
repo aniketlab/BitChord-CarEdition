@@ -772,7 +772,7 @@ fun SettingsScreen(
                         textDecoration = TextDecoration.Underline,
                     ),
                 )
-                withLink(LinkAnnotation.Url("https://github.com/kushagrasinghx/BitChord", linkStyles)) {
+                withLink(LinkAnnotation.Url("https://github.com/aniketlab/BitChord-CarEdition", linkStyles)) {
                     append("GitHub")
                 }
                 append("  ")
