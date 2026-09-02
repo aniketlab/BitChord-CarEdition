@@ -5,24 +5,54 @@
 
 <img src="Logo.png" alt="BitChord app icon" width="200" />
 
-# BitChord
+# BitChord (Car Edition)
 
-### Aesthetic YouTube Music Client
+### Aesthetic YouTube Music Client - Ported for Android Car Head Units
 
 <br/>
 
-[![Latest release](https://img.shields.io/github/v/release/kushagrasinghx/BitChord?style=for-the-badge&labelColor=0d1117)](https://github.com/kushagrasinghx/BitChord/releases)
 [![License](https://img.shields.io/github/license/kushagrasinghx/BitChord?style=for-the-badge&labelColor=0d1117)](https://github.com/kushagrasinghx/BitChord/blob/main/LICENSE)
-[![Downloads](https://img.shields.io/github/downloads/kushagrasinghx/BitChord/total?style=for-the-badge&labelColor=0d1117)](https://github.com/kushagrasinghx/BitChord/releases)
 
 <br/>
 
-[**Download**](#download) · [**Features**](#features) · [**Support**](#support) · [**Disclaimer**](#disclaimer)
+[**Credits**](#credits) · [**Download & Install**](#download) · [**Features**](#features) · [**Changelog**](#changelog)
 
 </div>
 
-> [!WARNING]
-> BitChord is not affiliated with, endorsed by, or connected to YouTube or Google in any way. Use it at your own discretion.
+> [!IMPORTANT]
+> **Credits & Acknowledgement:** This project is a modified port of the original **BitChord** application. Full credit for the core application, original design, and source code goes to the original developer: **[Kushagra Singh (kushagrasinghx)](https://github.com/kushagrasinghx/BitChord)**. We sincerely thank them for making this fantastic project open-source.
+
+---
+
+<div align="center">
+
+<h1><a id="target-device"></a>Target Device: Nakamichi NAM5360 Pro</h1>
+
+*This port was specifically built for the **Nakamichi NAM5360 Pro** and similar Android Head Units that face compatibility issues with standard mobile applications.*
+
+**Device Specifications:**
+- **OS:** Android NK13.0 (32-bit OS on 64-bit chip)
+- **Processor:** A55, 2.0GHz
+- **RAM / Storage:** 4GB / 64GB
+- **Display:** 9 Inch, 1280 x 720 (Landscape)
+- **Audio:** 32-Band EQ, 4.1 Channel Pre-output
+
+*If you have this head unit or any similar car stereo (often locked to 32-bit or missing standard phone hardware), this Car Edition is made for you!*
+
+</div>
+
+---
+
+<div align="center">
+
+<h1><a id="changelog"></a>What's New in Car Edition?</h1>
+
+This version has been specifically modified to install and run smoothly on Android car stereos which often fail to install regular phone apps:
+- **Added 32-bit Architecture Support (`armeabi-v7a`):** Many car stereos (like Nakamichi) run on 32-bit Android despite having 64-bit capable processors (to save RAM). The original app was strictly 64-bit.
+- **Removed Strict Hardware Requirements:** Bypassed requirements for Telephony, Camera, GPS, etc., which often block app installation on car head units.
+- **Removed Portrait Lock:** The app is now allowed to run on Landscape tablet screens (like 1280x720 9-inch car displays).
+
+</div>
 
 ---
 
@@ -77,9 +107,12 @@
 
 <div align="center">
 
-<h1><a id="download"></a>Download</h1>
+<h1><a id="download"></a>Download & Installation for Car Stereos</h1>
 
-Grab the latest signed APK from the [Releases](https://github.com/kushagrasinghx/BitChord/releases) page. Sideloading requires enabling "Install unknown apps" for whichever app you download it with.
+1. Grab the latest signed APK from the [Releases](#) page of this repository.
+2. Copy the `.apk` file to a **USB Pen Drive**.
+3. Plug the USB into your Car's USB port.
+4. Open the **File Manager** app on your car screen, locate the `.apk` file, and tap to install. *(Make sure "Install unknown apps" is allowed in settings)*.
 
 </div>
 
@@ -87,27 +120,12 @@ Grab the latest signed APK from the [Releases](https://github.com/kushagrasinghx
 
 <div align="center">
 
-<h1><a id="support"></a>Support</h1>
+<h1><a id="support"></a>Support the Original Developer</h1>
 
-BitChord is free and always will be — if it's earned a spot in your rotation, you can chip in here:
+BitChord is free and always will be. Please consider supporting the original developer **Kushagra Singh** for his hard work:
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/kushagrasinghx)
 [![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/kuxhagrasingh)
-
-</div>
-
----
-
-<div align="center">
-
-<h1><a id="disclaimer"></a>Disclaimer & Legal Notice</h1>
-
-BitChord is an independent, community-driven third-party audio player and client. It is **not** associated with Google LLC, YouTube Music, Deezer, Telegram, or any of their parent companies.
-
-* **No Media Hosting:** BitChord does not host, upload, or store copyrighted music files. It operates strictly as an interface to scan local device storage or stream media directly from public, public-facing, or user-authenticated APIs.
-* **Fair Use & API Usage:** This software is created solely for personal research, educational, and fair-use purposes. The user is entirely responsible for ensuring their usage aligns with their local copyright laws and YouTube Terms of Service.
-* **No Ad-Blocking Guarantee:** While BitChord focuses on providing a clean listening environment, it does not guarantee permanent bypasses or modifications to commercial third-party platform conditions.
-* **Copyleft:** BitChord is free software under the GPLv3. The license does not let anyone forbid others from selling or redistributing copies, but any distribution must come with the Corresponding Source under the same license.
 
 </div>
 

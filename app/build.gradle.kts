@@ -67,7 +67,7 @@ android {
         // double the native payload for devices that do not exist in the
         // install base.
         ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
         }
     }
 
