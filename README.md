@@ -14,9 +14,6 @@
 [![License](https://img.shields.io/github/license/kushagrasinghx/BitChord?style=for-the-badge&labelColor=0d1117)](https://github.com/kushagrasinghx/BitChord/blob/main/LICENSE)
 
 <br/>
-
-[**Credits**](#credits) · [**Download & Install**](#download) · [**Features**](#features) · [**Changelog**](#changelog)
-
 </div>
 
 > [!IMPORTANT]
@@ -26,18 +23,46 @@
 
 <div align="center">
 
-<h1><a id="target-device"></a>Target Device: Nakamichi NAM5360 Pro</h1>
+<h2>🎯 Optimized for Nakamichi NAM5360 Pro</h2>
 
-*This port was specifically built for the **Nakamichi NAM5360 Pro** and similar Android Head Units that face compatibility issues with standard mobile applications.*
+<p><em>Engineered to deliver a premium, uncompromised audio and visual experience specifically tailored for high-end automotive head units.</em></p>
 
-**Device Specifications:**
-- **OS:** Android NK13.0 (32-bit OS on 64-bit chip)
-- **Processor:** A55, 2.0GHz
-- **RAM / Storage:** 4GB / 64GB
-- **Display:** 9 Inch, 1280 x 720 (Landscape)
-- **Audio:** 32-Band EQ, 4.1 Channel Pre-output
+<img src="Nakamichi%20Front%201.png" alt="Nakamichi NAM5360 Pro" width="80%" />
 
-*If you have this head unit or any similar car stereo (often locked to 32-bit or missing standard phone hardware), this Car Edition is made for you!*
+<br/><br/>
+
+<h3>Technical Specifications</h3>
+
+<table align="center" width="70%">
+  <tr>
+    <td align="right"><b>Operating System</b></td>
+    <td>Android NK13.0 (Native 32-bit Architecture)</td>
+  </tr>
+  <tr>
+    <td align="right"><b>Processor Core</b></td>
+    <td>Cortex-A55 @ 2.0GHz</td>
+  </tr>
+  <tr>
+    <td align="right"><b>Memory & Storage</b></td>
+    <td>4GB RAM / 64GB Internal Storage</td>
+  </tr>
+  <tr>
+    <td align="right"><b>Display Panel</b></td>
+    <td>9-Inch Incell IPS (1280 × 720 Landscape)</td>
+  </tr>
+  <tr>
+    <td align="right"><b>Audio Processing</b></td>
+    <td>32-Band EQ / 4.1 Channel Pre-output (4 × 50W Max)</td>
+  </tr>
+</table>
+
+<br/>
+<h3>Immersive Dashboard Experience</h3>
+
+<img src="Nakamichi%20Front%202.png" alt="Car Interior View 1" width="45%" /> &nbsp; <img src="Nakamichi%203nd.png" alt="Car Interior View 2" width="45%" />
+
+<br/><br/>
+<p><em>While designed around the Nakamichi NAM5360 Pro, this Car Edition guarantees seamless compatibility with any Android car stereo suffering from package installer limitations or strict hardware checks.</em></p>
 
 </div>
 
@@ -45,12 +70,39 @@
 
 <div align="center">
 
-<h1><a id="changelog"></a>What's New in Car Edition?</h1>
+<h2>🚀 What's New in Car Edition?</h2>
 
-This version has been specifically modified to install and run smoothly on Android car stereos which often fail to install regular phone apps:
-- **Added 32-bit Architecture Support (`armeabi-v7a`):** Many car stereos (like Nakamichi) run on 32-bit Android despite having 64-bit capable processors (to save RAM). The original app was strictly 64-bit.
-- **Removed Strict Hardware Requirements:** Bypassed requirements for Telephony, Camera, GPS, etc., which often block app installation on car head units.
-- **Removed Portrait Lock:** The app is now allowed to run on Landscape tablet screens (like 1280x720 9-inch car displays).
+<p><em>This version has been explicitly re-engineered to run flawlessly on Android Car Stereos, fixing the common "App not installed" errors.</em></p>
+
+<table>
+  <tr>
+    <td align="center" width="15%">
+      <h2>⚙️</h2>
+    </td>
+    <td>
+      <strong>32-Bit Architecture Support (armeabi-v7a)</strong><br/>
+      Most car stereos run on a 32-bit Android OS to save RAM. The original app was strictly 64-bit. This edition includes full native 32-bit compilation so it installs perfectly.
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <h2>🔓</h2>
+    </td>
+    <td>
+      <strong>Hardware Restrictions Bypassed</strong><br/>
+      Removed strict manifest requirements for phone-specific hardware (Telephony, Camera, GPS) that normally cause the Android Package Installer to block the app on car head units.
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <h2>🖥️</h2>
+    </td>
+    <td>
+      <strong>Landscape Screen Unlocked</strong><br/>
+      Removed strict portrait orientation locks. The application is now fully allowed to run and adapt to your wide 1280x720 landscape dashboard display.
+    </td>
+  </tr>
+</table>
 
 </div>
 
@@ -100,41 +152,5 @@ This version has been specifically modified to install and run smoothly on Andro
     </td>
   </tr>
 </table>
-
-</div>
-
----
-
-<div align="center">
-
-<h1><a id="download"></a>Download & Installation for Car Stereos</h1>
-
-1. Grab the latest signed APK from the [Releases](#) page of this repository.
-2. Copy the `.apk` file to a **USB Pen Drive**.
-3. Plug the USB into your Car's USB port.
-4. Open the **File Manager** app on your car screen, locate the `.apk` file, and tap to install. *(Make sure "Install unknown apps" is allowed in settings)*.
-
-</div>
-
----
-
-<div align="center">
-
-<h1><a id="support"></a>Support the Original Developer</h1>
-
-BitChord is free and always will be. Please consider supporting the original developer **Kushagra Singh** for his hard work:
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/kushagrasinghx)
-[![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/kuxhagrasingh)
-
-</div>
-
----
-
-<div align="center">
-
-<h1><a id="license"></a>License</h1>
-
-This project is licensed under the **GNU General Public License v3.0 (GPLv3)**. See the [LICENSE](LICENSE) file for details.
 
 </div>
