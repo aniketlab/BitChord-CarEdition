@@ -195,19 +195,27 @@ class MainActivity : AppCompatActivity() {
                 ThemeMode.DARK -> true
             }
             BitChordTheme(darkTheme = darkTheme) {
-                // The window's width, measured rather than asked for.
-                //
-                // `Configuration.screenWidthDp` is the wrong question here: in a
-                // freeform or desktop window it can report the display rather
-                // than the window it is actually in, and it lands a beat late
-                // when that window is dragged. The layout downstream splits in
-                // two on the strength of this number and sizes both halves from
-                // it, so a stale one is a player pane sized for a window that no
-                // longer exists and a page squeezed to a sliver to pay for it.
-                // A measured constraint cannot be stale — it is the very width
-                // the split is about to be laid out in.
-                BoxWithConstraints(Modifier.fillMaxSize()) {
-                    BitChordApp(darkTheme = darkTheme, windowWidth = maxWidth)
+                val currentDensity = LocalDensity.current
+                androidx.compose.runtime.CompositionLocalProvider(
+                    LocalDensity provides androidx.compose.ui.unit.Density(
+                        density = currentDensity.density * 0.85f,
+                        fontScale = currentDensity.fontScale * 0.85f
+                    )
+                ) {
+                    // The window's width, measured rather than asked for.
+                    //
+                    // `Configuration.screenWidthDp` is the wrong question here: in a
+                    // freeform or desktop window it can report the display rather
+                    // than the window it is actually in, and it lands a beat late
+                    // when that window is dragged. The layout downstream splits in
+                    // two on the strength of this number and sizes both halves from
+                    // it, so a stale one is a player pane sized for a window that no
+                    // longer exists and a page squeezed to a sliver to pay for it.
+                    // A measured constraint cannot be stale — it is the very width
+                    // the split is about to be laid out in.
+                    BoxWithConstraints(Modifier.fillMaxSize()) {
+                        BitChordApp(darkTheme = darkTheme, windowWidth = maxWidth)
+                    }
                 }
             }
         }
