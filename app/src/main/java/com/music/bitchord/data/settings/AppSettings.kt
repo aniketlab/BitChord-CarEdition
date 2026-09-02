@@ -453,7 +453,7 @@ object AppSettings {
         autoplay.value = prefs.getBoolean(KEY_AUTOPLAY, true)
         showNerdStats.value = prefs.getBoolean(KEY_NERD_STATS, false)
         reduceAnimation.value = prefs.getBoolean(KEY_REDUCE_ANIMATION, false)
-        stopOnTaskRemoved.value = prefs.getBoolean(KEY_STOP_ON_TASK_REMOVED, false)
+        stopOnTaskRemoved.value = prefs.getBoolean(KEY_STOP_ON_TASK_REMOVED, true)
         hideVolumeBar.value = prefs.getBoolean(KEY_HIDE_VOLUME_BAR, true)
         swipeToPlayNext.value = prefs.getBoolean(KEY_SWIPE_TO_PLAY_NEXT, false)
         dontRepeatSuggestions.value = prefs.getBoolean(KEY_DONT_REPEAT_SUGGESTIONS, false)
