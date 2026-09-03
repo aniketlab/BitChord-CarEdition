@@ -2880,10 +2880,7 @@ class PlaybackService : MediaSessionService() {
             .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
             .setAudioProcessorChain(
                 DefaultAudioSink.DefaultAudioProcessorChain(
-                    // Transition filtering last of the two: widening is a
-                    // property of the track, and a bass swap that ran before it
-                    // would have its own low end fed back in by the crossfeed.
-                    arrayOf(spatial, transition),
+                    emptyArray(),
                     SilenceSkippingAudioProcessor(
                         MIN_SILENCE_US,
                         SilenceSkippingAudioProcessor.DEFAULT_SILENCE_RETENTION_RATIO,
@@ -3407,10 +3404,11 @@ class PlaybackService : MediaSessionService() {
         const val BACK_BUFFER_MS = 30 * 1000
 
         /** Enough to cover the decoder's own latency, not seconds of dead air. */
-        const val START_PLAYBACK_MS = 500
-
-        /** More room after a stall than at the start — see the load control. */
-        const val RESUME_PLAYBACK_MS = 2_000
+        const val START_PLAYBACK_MS = 2500
+        /**
+         * Wait to re-buffer this much track before resuming after an underrun.
+         */
+        const val RESUME_PLAYBACK_MS = 4_000
 
         /**
          * Outer cap on stream resolution. Individual client calls and probes
