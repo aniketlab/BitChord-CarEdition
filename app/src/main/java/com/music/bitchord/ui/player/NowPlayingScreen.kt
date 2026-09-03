@@ -285,9 +285,9 @@ private val PLAYER_MAX_WIDTH = 560.dp
  * for it. The floor is there because the fraction of the narrowest window that
  * qualifies is thinner than the controls want to be.
  */
-private const val DOCKED_PLAYER_FRACTION = 0.42f
-private val DOCKED_PLAYER_MIN_WIDTH = 340.dp
-private val DOCKED_PLAYER_MAX_WIDTH = 420.dp
+private const val DOCKED_PLAYER_FRACTION = 0.35f
+private val DOCKED_PLAYER_MIN_WIDTH = 320.dp
+private val DOCKED_PLAYER_MAX_WIDTH = 360.dp
 
 /**
  * The narrowest the page is worth leaving while the player stands beside it.
