@@ -9,7 +9,7 @@ import coil3.SingletonImageLoader
 import coil3.disk.DiskCache
 import coil3.disk.directory
 import coil3.memory.MemoryCache
-import coil3.request.crossfade
+
 import com.music.bitchord.auth.AuthStore
 import com.music.bitchord.data.canvas.CanvasCache
 import com.music.bitchord.data.canvas.SpotifyToken
@@ -114,7 +114,8 @@ class BitChordApplication : Application(), SingletonImageLoader.Factory {
             }
             // Covers arriving with a hard cut read as the list flickering as
             // it scrolls; a short fade reads as them developing.
-            .crossfade(200)
+            // Disabled for CarEdition: Crossfade causes hardware acceleration glitches/black pixels on weak GPUs.
+            // .crossfade(200)
             .build()
 
     private fun initLastfm() {

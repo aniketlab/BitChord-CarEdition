@@ -2870,29 +2870,7 @@ class PlaybackService : MediaSessionService() {
     private fun silenceSkippingRenderers(
         spatial: SpatialAudioProcessor,
         transition: TransitionFilterProcessor,
-    ) = object : DefaultRenderersFactory(this) {
-        override fun buildAudioSink(
-            context: Context,
-            enableFloatOutput: Boolean,
-            enableAudioTrackPlaybackParams: Boolean,
-        ): AudioSink = DefaultAudioSink.Builder(context)
-            .setEnableFloatOutput(enableFloatOutput)
-            .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
-            .setAudioProcessorChain(
-                DefaultAudioSink.DefaultAudioProcessorChain(
-                    emptyArray(),
-                    SilenceSkippingAudioProcessor(
-                        MIN_SILENCE_US,
-                        SilenceSkippingAudioProcessor.DEFAULT_SILENCE_RETENTION_RATIO,
-                        SilenceSkippingAudioProcessor.DEFAULT_MAX_SILENCE_TO_KEEP_DURATION_US,
-                        SilenceSkippingAudioProcessor.DEFAULT_MIN_VOLUME_TO_KEEP_PERCENTAGE,
-                        SilenceSkippingAudioProcessor.DEFAULT_SILENCE_THRESHOLD_LEVEL,
-                    ),
-                    SonicAudioProcessor(),
-                ),
-            )
-            .build()
-    }
+    ) = DefaultRenderersFactory(this)
 
     /**
      * Push current settings onto a player. Called for both: whichever one is
