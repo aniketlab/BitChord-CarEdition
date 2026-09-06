@@ -100,15 +100,37 @@ object AppUpdateChecker {
      * page as before.
      */
     private fun apkAssetUrl(release: JsonObject): String? = runCatching {
-        release["assets"]?.jsonArray
+        val assets = release["assets"]?.jsonArray
             ?.mapNotNull { it as? JsonObject }
-            ?.firstOrNull { asset ->
+            ?.filter { asset ->
                 asset["name"]?.jsonPrimitive?.contentOrNull?.endsWith(".apk", ignoreCase = true) == true &&
                     asset["state"]?.jsonPrimitive?.contentOrNull == "uploaded"
+            } ?: return@runCatching null
+
+        if (assets.isEmpty()) return@runCatching null
+
+        // 1. Try to find an exact ABI match based on the device's supported architectures
+        for (abi in Build.SUPPORTED_ABIS) {
+            val abiMatch = assets.firstOrNull { asset ->
+                val name = asset["name"]?.jsonPrimitive?.contentOrNull ?: ""
+                name.contains(abi, ignoreCase = true)
             }
-            ?.get("browser_download_url")
-            ?.jsonPrimitive
-            ?.contentOrNull
+            if (abiMatch != null) {
+                return@runCatching abiMatch["browser_download_url"]?.jsonPrimitive?.contentOrNull
+            }
+        }
+
+        // 2. If no exact ABI matches, look for a universal APK
+        val universalMatch = assets.firstOrNull { asset ->
+            val name = asset["name"]?.jsonPrimitive?.contentOrNull ?: ""
+            name.contains("universal", ignoreCase = true)
+        }
+        if (universalMatch != null) {
+            return@runCatching universalMatch["browser_download_url"]?.jsonPrimitive?.contentOrNull
+        }
+
+        // 3. Fallback: just return the first APK
+        assets.first()["browser_download_url"]?.jsonPrimitive?.contentOrNull
     }.getOrNull()
 
     /**
