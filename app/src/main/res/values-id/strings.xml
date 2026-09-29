@@ -6,6 +6,13 @@
     <string name="download_notification_title">Mengunduh</string>
     <string name="download_notification_starting">Memulai</string>
     <string name="download_notification_queued">%1$s · %2$d lagi dalam antrean</string>
+    <string name="upload_channel_name">Unggahan</string>
+    <string name="upload_channel_description">Lagu yang sedang dikirim ke server WebDAV kamu</string>
+    <string name="upload_notification_title">Mengunggah</string>
+    <string name="upload_notification_queued">%1$s · %2$d lagi dalam antrean</string>
+    <plurals name="uploading_song_count">
+        <item quantity="other">Mengunggah %1$d lagu</item>
+    </plurals>
     <string name="cancel">Batal</string>
     <string name="save">Simpan</string>
     <string name="close">Tutup</string>
@@ -14,6 +21,7 @@
     <string name="search">Cari</string>
     <string name="clear_search">Hapus pencarian</string>
     <string name="library">Perpustakaan</string>
+    <string name="home">Beranda</string>
     <string name="play">Putar</string>
     <string name="explore">Jelajahi</string>
     <string name="listen_now">Dengarkan Sekarang</string>
@@ -80,6 +88,8 @@
     <string name="rich_presence">Rich presence</string>
     <string name="scrobbling">Scrobbling</string>
     <string name="now_playing">Sedang diputar</string>
+    <string name="next_in_queue">Berikutnya di antrean</string>
+    <string name="next_from">Berikutnya dari: %1$s</string>
     <string name="selected">Dipilih</string>
     <string name="password">Kata sandi</string>
     <string name="username">Nama pengguna</string>
@@ -125,10 +135,14 @@
     <string name="widget_open_bitchord">Buka BitChord</string>
     <string name="widget_preview_title">Judul lagu</string>
     <string name="widget_preview_artist">Artis</string>
+    <string name="widget_pill_label">Sedang diputar 4×1</string>
+    <string name="widget_pill_description">Lagu dengan Suka, Acak, dan kontrol pemutaran dalam satu baris.</string>
+    <string name="widget_preview_pill">Judul lagu - Artis</string>
     <string name="download_quality">Kualitas unduhan</string>
     <string name="download_wifi_only">Unduh hanya lewat Wi-Fi</string>
     <string name="spatial_audio">Audio spasial</string>
     <string name="spatial_audio_subtitle">Melebarkan trek stereo untuk pengalaman yang lebih imersif</string>
+    <string name="spatial_audio_atmos_subtitle">Dijeda untuk lagu ini — Dolby Atmos sudah spasial</string>
     <string name="animated_cover_cellular">Putar sampul animasi lewat data seluler</string>
     <string name="replay">Replay</string>
     <string name="replay_subtitle">Lagu, artis, album, dan genre teratas Anda</string>
@@ -160,6 +174,7 @@
     <string name="hebrew">Ibrani</string>
     <string name="italian">Italia</string>
     <string name="turkish">Turki</string>
+    <string name="thai">Thai</string>
     <string name="show_all">Lihat semua</string>
     <string name="grid_view">Grid</string>
     <string name="list_view">Daftar</string>
@@ -181,6 +196,7 @@
     <string name="automix">Automix [BETA]</string>
     <string name="skip_silence">Lewati keheningan</string>
     <string name="skip_silence_subtitle">Memotong jeda lebih dari satu detik</string>
+    <string name="skip_silence_float_subtitle">Tidak tersedia pada output float 32-bit</string>
     <string name="equalizer">Equalizer</string>
     <string name="equalizer_subtitle">Panel sistem perangkat Anda</string>
     <string name="show_nerd_stats">Tampilkan statistik teknis</string>
@@ -206,6 +222,8 @@
     <string name="stop_music_on_close_subtitle">Menghentikan pemutaran saat aplikasi digeser keluar dari aplikasi terbaru</string>
     <string name="hide_volume_bar">Sembunyikan bilah volume</string>
     <string name="hide_volume_bar_subtitle">Menghapus penggeser volume dari pemutar utama</string>
+    <string name="hide_song_status">Sembunyikan status lagu</string>
+    <string name="hide_song_status_subtitle">Menyembunyikan teks “Diputar dari” atau “Diputar oleh” di pemutar utama</string>
     <string name="off">Nonaktif</string>
     <string name="low">Rendah</string>
     <string name="medium">Sedang</string>
@@ -217,7 +235,6 @@
     <string name="dark">Gelap</string>
     <string name="full_screen_cover_art_subtitle">Membuat sampul memenuhi tepi pemutar alih-alih berbentuk persegi</string>
     <string name="animated_cover_art_subtitle">Memutar video berulang yang disertakan beberapa rilisan alih-alih sampul diam</string>
-    <string name="miscellaneous_footer">Jika diaktifkan, menutup aplikasi dari layar aplikasi terbaru juga akan menghentikan pemutaran musik.</string>
     <string name="dont_repeat_songs_subtitle">Putar Otomatis tidak akan menyarankan lagu yang sudah diputar atau disarankan dalam sesi ini</string>
     <string name="download_quality_subtitle">%1$s per trek, apa pun koneksinya</string>
     <string name="filter_non_music_audio">Filter audio non-musik</string>
@@ -252,6 +269,17 @@
     <string name="buttons">Tombol</string>
     <string name="clear_name">Hapus nama</string>
     <string name="close_lyrics">Tutup lirik</string>
+    <string name="translate_lyrics">Terjemahkan lirik</string>
+    <string name="romanize_lyrics">Romanisasi lirik</string>
+    <string name="show_original_lyrics">Tampilkan lirik asli</string>
+    <string name="translating_lyrics_to">Menerjemahkan ke %1$s…</string>
+    <string name="lyrics_translated_to">Diterjemahkan ke %1$s</string>
+    <string name="romanizing_lyrics">Meromanisasi lirik…</string>
+    <string name="lyrics_romanized">Pelafalan romanisasi</string>
+    <string name="lyrics_already_romanized">Lirik ini sudah memakai huruf Latin</string>
+    <string name="lyrics_romanization_unavailable">Romanisasi tidak tersedia untuk lirik ini</string>
+    <string name="lyrics_already_in_language">Lirik ini sudah dalam %1$s</string>
+    <string name="lyrics_translation_unavailable">Terjemahan tidak tersedia saat ini</string>
     <string name="connect_account_first">Hubungkan akun terlebih dahulu</string>
     <string name="connected_presence_off">Terhubung, presence nonaktif</string>
     <string name="copy_log">Salin log</string>
@@ -267,6 +295,8 @@
     <string name="discord_button_variables">{song_name}, {artist_name}, dan {album_name} akan digantikan dengan trek yang sedang diputar.</string>
     <string name="discord_buttons_footer">{song_name}, {artist_name}, dan {album_name} akan digantikan dengan trek tersebut. Tombol pertama membuka lagu di YouTube Music dan tombol kedua membuka proyek ini.</string>
     <string name="discord_presence_footer">Kartu diperbarui saat trek, posisi, atau status pemutaran berubah. Kartu akan hilang saat pemutaran berhenti.</string>
+    <string name="discord_show_audio_quality">Tampilkan kualitas audio</string>
+    <string name="discord_show_audio_quality_subtitle">Spesifikasi Hi-Res, lossless, dan Dolby di kartu status</string>
     <string name="discord_sign_in_footer">Masuk akan membuka halaman login Discord. Tidak ada yang diketik ke BitChord.</string>
     <string name="discord_token">Token Discord</string>
     <string name="discord_token_description">Tempel token akun Discord Anda. Token ini tetap terenkripsi di perangkat ini dan hanya dikirim ke Discord.</string>
@@ -288,6 +318,13 @@
     <string name="instrumental">Instrumental</string>
     <string name="pause">Jeda</string>
     <string name="lyrics_by">Lirik oleh %1$s</string>
+    <string name="change_lyrics_provider">Ganti</string>
+    <string name="choose_lyrics_provider">Pilih penyedia lirik</string>
+    <string name="lyrics_provider_current">Penyedia saat ini</string>
+    <string name="lyrics_provider_found">Lirik ditemukan · Ketuk untuk memakai</string>
+    <string name="lyrics_provider_not_found">Lirik tidak ditemukan</string>
+    <string name="lyrics_provider_fetching">Mengambil lirik…</string>
+    <string name="lyrics_provider_not_fetched">Ketuk untuk mengambil</string>
     <string name="no_lyrics_found">Lirik tidak ditemukan</string>
     <string name="lyrics_saved_with_download">Lirik disimpan bersama unduhan ini</string>
     <string name="shuffle_on">Acak aktif</string>
@@ -393,14 +430,12 @@
     <string name="no_playlists_yet">Belum ada playlist. Gunakan baris di atas untuk membuat satu.</string>
     <string name="no_tracks_here">Tidak ada trek di sini</string>
     <string name="not_connected">Tidak terhubung</string>
-    <string name="nothing_playing">Tidak ada yang diputar</string>
     <string name="one_hour">1 jam</string>
     <string name="open_album">Buka album</string>
     <string name="open_artist">Buka artis</string>
     <string name="pause_after_a_while">Jeda pemutaran setelah beberapa saat</string>
     <string name="pause_after_song">Menjeda saat lagu ini berakhir</string>
     <string name="pause_countdown">%1$s hingga pemutaran dijeda</string>
-    <string name="pick_something">Pilih sesuatu dan itu akan muncul di sini</string>
     <string name="play_to_preview">Putar sesuatu untuk mengisi pratinjau.</string>
     <string name="playlist_name">Nama playlist</string>
     <string name="presence">Presence</string>
@@ -441,11 +476,23 @@
     <string name="sources_order_footer">Jika suatu sumber tidak memiliki trek atau tidak dapat dijangkau, BitChord mencoba sumber berikutnya. Sumber di atas YouTube dapat menggantikan rekamannya saat menghasilkan versi yang lebih baik.</string>
     <string name="sources_order_header">Sumber, dicoba dalam urutan ini</string>
     <string name="sources_quality_capped">Koneksi ini diatur di bawah Kualitas tinggi, sehingga stream ditranskode agar sesuai dengan batas tersebut. Unduhan tidak terpengaruh.</string>
+    <string name="jiosaavn_mismatch_warning">Bisa mencocokkan versi lagu yang salah. Aktifkan dengan risiko sendiri.</string>
+    <string name="enable_jiosaavn">Aktifkan JioSaavn?</string>
+    <string name="enable_anyway">Tetap aktifkan</string>
     <string name="sources_subtitle">Dari mana audio berasal dan urutan yang digunakan</string>
+    <string name="source_matching">Pencocokan sumber</string>
+    <string name="upgrade_length_slack">Toleransi durasi lagu</string>
+    <string name="upgrade_length_slack_subtitle">Selisih durasi maksimum yang diizinkan untuk stream pengganti</string>
+    <string name="upgrade_length_slack_footer">Toleransi lebih besar menerima lebih banyak kecocokan sumber; toleransi lebih kecil lebih ketat. Bawaannya 3 detik.</string>
+    <string name="seconds_short">%1$d dtk</string>
     <string name="spdc_token">Token sp_dc</string>
     <string name="spotify_canvas_setup">Penyiapan Spotify Canvas</string>
     <string name="spotify_canvas_setup_description">Untuk menggunakan Spotify Canvas, berikan cookie sp_dc Spotify Anda.</string>
     <string name="spotify_canvas_setup_steps">1. Masuk di open.spotify.com melalui browser.\n2. Buka Developer Tools, lalu Application dan Cookies.\n3. Salin nilai cookie sp_dc.\n4. Tempel di bawah ini.</string>
+    <string name="spotify_canvas_auto_hide">Sembunyikan kontrol otomatis</string>
+    <string name="spotify_canvas_auto_hide_subtitle">Menciutkan setengah pemutar setelah 5 detik saat Spotify Canvas diputar</string>
+    <string name="prioritize_spotify_canvas">Prioritaskan Spotify Canvas</string>
+    <string name="prioritize_spotify_canvas_subtitle">Coba Spotify sebelum Apple Music dan penyedia sampul animasi lainnya</string>
     <string name="status">Status</string>
     <string name="status_dialog_message">Apa yang ditampilkan akun Anda saat presence aktif.</string>
     <string name="status_dnd">Jangan ganggu</string>
@@ -549,6 +596,33 @@
     <string name="use_all_audio_folders_subtitle">Menghapus batas folder dan memindai musik di seluruh perangkat</string>
     <string name="album">album</string>
     <string name="artist">artis</string>
+    <string name="webdav">WebDAV</string>
+    <string name="webdav_subtitle">Musik di server kamu</string>
+    <string name="webdav_not_configured">Hubungkan server di Sumber</string>
+    <string name="webdav_empty">Tidak ada file audio di server WebDAV. Periksa URL di Setelan.</string>
+    <string name="webdav_description">Arahkan BitChord ke folder musik WebDAV — direktori Musik Nextcloud kamu atau server apa pun yang mendukung WebDAV.</string>
+    <string name="webdav_server_url">URL server</string>
+    <string name="webdav_server_url_hint">https://cloud.example.com/remote.php/dav/files/user/Music</string>
+    <string name="webdav_disconnect">Putuskan</string>
+    <string name="webdav_test_failed">Tidak bisa dijangkau: %1$s</string>
+    <string name="upload_to_webdav">Unggah ke WebDAV</string>
+    <string name="webdav_conflict_title">“%1$s” sudah ada di server</string>
+    <string name="webdav_conflict_message">Timpa, atau simpan kedua salinan?</string>
+    <string name="webdav_overwrite">Timpa</string>
+    <string name="webdav_keep_both">Simpan keduanya</string>
+    <string name="webdav_skip">Lewati</string>
+    <string name="webdav_apply_to_all">Terapkan ke semua</string>
+    <string name="webdav_upload_summary">%1$d terunggah · %2$d dilewati · %3$d gagal</string>
+    <string name="smb">SMB</string>
+    <string name="smb_subtitle">Musik di folder berbagi</string>
+    <string name="smb_not_configured">Hubungkan folder berbagi di Sumber</string>
+    <string name="smb_empty">Tidak ada file audio di folder berbagi SMB. Periksa server di Sumber.</string>
+    <string name="smb_description">Arahkan BitChord ke folder musik bersama — NAS atau folder berbagi Windows lewat SMB.</string>
+    <string name="smb_server_hint">nas.local or 192.168.1.10:4445</string>
+    <string name="smb_share_hint">Nama share, mis. Music</string>
+    <string name="smb_folder_hint">Folder (opsional)</string>
+    <string name="smb_disconnect">Putuskan</string>
+    <string name="smb_test_failed">Tidak bisa dijangkau: %1$s</string>
     <string name="playlist">playlist</string>
     <string name="open">Buka</string>
     <string name="open_playlist">Buka playlist</string>
@@ -566,6 +640,11 @@
     <string name="analysis_refining">dianalisis, menyempurnakan…</string>
     <string name="analysis_in_progress">menganalisis…</string>
     <string name="waiting">menunggu</string>
+    <string name="version_alignment_status">%1$s · %2$s</string>
+    <string name="version_cut_not_fetched">belum diambil</string>
+    <string name="version_cut_fetching">mengambil</string>
+    <string name="version_cut_measuring">menganalisis</string>
+    <string name="version_cut_aligned">selaras</string>
     <string name="automix_enabled_subtitle">Mengatur waktu dan memadukan setiap transisi dari trek itu sendiri. Nonaktifkan jika ponsel menjadi panas atau pemutaran tersendat.</string>
     <string name="automix_disabled_subtitle">Mengatur waktu dan memadukan transisi secara otomatis, tanpa penggeser. Performa dapat bervariasi pada perangkat yang lebih lambat.</string>
     <string name="no_lyrics_sources_enabled">Tidak ada. Lirik tidak akan diambil.</string>
@@ -621,4 +700,593 @@
         <item>Lirik mulai tersusun</item>
         <item>Hampir menemukan kata-katanya</item>
     </string-array>
+
+    <!-- Listen together -->
+    <string name="listen_together">Dengar bersama</string>
+    <string name="listen_together_subtitle">Bagikan kode dan putar musik yang sama, serempak</string>
+    <string name="listen_together_in_party">Dalam pesta · %1$s</string>
+    <string name="listen_together_sign_in_footer">Mendengar bersama butuh akun, supaya semua orang di pesta bisa lihat siapa saja yang ikut.</string>
+    <string name="listen_together_server">Server pesta</string>
+    <string name="listen_together_server_online">Online · %1$d ms</string>
+    <string name="listen_together_server_online_fallback">Online (cadangan bawaan) · %1$d ms</string>
+    <string name="listen_together_server_offline">Sedang tidak bisa dihubungi</string>
+    <string name="listen_together_server_checking">Memeriksa…</string>
+    <string name="listen_together_server_unknown">Ketuk untuk memeriksa</string>
+    <string name="listen_together_custom_server">Pakai server sendiri</string>
+    <string name="listen_together_custom_server_footer">Biarkan kosong untuk memakai server bawaan. Kalau kamu menjalankan salinan sendiri, semua orang di pesta harus diarahkan ke server yang sama.</string>
+    <string name="listen_together_using_default">Memakai server bawaan</string>
+    <string name="listen_together_remove_server">Hapus server</string>
+    <string name="listen_together_switched_to_default">Beralih ke server bawaan</string>
+    <string name="listen_together_custom_server_saved">Server kustom disimpan</string>
+    <string name="listen_together_create">Buat pesta</string>
+    <string name="listen_together_create_subtitle">Dapatkan kode untuk dibagikan ke teman</string>
+    <string name="listen_together_create_footer">Kamu dapat kode enam karakter. Siapa pun yang punya kodenya bisa ikut, sampai %1$d perangkat termasuk milikmu.</string>
+    <string name="listen_together_profile">Profil pestamu</string>
+    <string name="listen_together_nickname_hint">Nama panggilan untuk pesta ini</string>
+    <string name="listen_together_party_size">Ukuran pesta</string>
+    <string name="listen_together_party_size_subtitle">Pilih 2–10 pendengar</string>
+    <string name="listen_together_host_controls">Hanya kamu yang bisa mengubah kapasitas atau mengeluarkan pendengar</string>
+    <string name="listen_together_remove">Keluarkan</string>
+    <string name="listen_together_activity">Aktivitas terbaru</string>
+    <string name="listen_together_activity_footer">Hanya sesi ini · terbaru dulu · hingga 100 aksi</string>
+    <string name="listen_together_activity_played">Memulai pemutaran</string>
+    <string name="listen_together_activity_paused">Menjeda pemutaran</string>
+    <string name="listen_together_activity_seeked">Menggeser posisi lagu</string>
+    <string name="listen_together_activity_skipped">Melompat ke depan</string>
+    <string name="listen_together_activity_went_back">Kembali ke sebelumnya</string>
+    <string name="listen_together_activity_added">Menambahkan ke antrean</string>
+    <string name="listen_together_activity_removed_track">Menghapus lagu dari antrean</string>
+    <string name="listen_together_activity_cleared">Mengosongkan lagu berikutnya</string>
+    <string name="listen_together_activity_reordered">Mengatur ulang antrean</string>
+    <string name="listen_together_activity_removed_member">Mengeluarkan pendengar</string>
+    <string name="listen_together_activity_changed_size">Mengubah ukuran pesta</string>
+    <string name="listen_together_activity_updated">Memperbarui pesta</string>
+    <string name="listen_together_join">Ikut pesta</string>
+    <string name="listen_together_join_action">Ikut</string>
+    <string name="listen_together_code_hint">Enam huruf atau angka</string>
+    <string name="listen_together_code">Kode pesta</string>
+    <string name="listen_together_code_footer">Bacakan atau kirimkan. Huruf O dan I tidak dipakai, jadi “o” selalu berarti nol.</string>
+    <string name="copy_code">Salin kode</string>
+    <string name="listen_together_share_text">Dengarkan bareng aku di BitChord — kode pesta %1$s</string>
+    <string name="listen_together_now_playing">Sedang diputar</string>
+    <string name="listen_together_nothing_playing">Belum ada yang diputar</string>
+    <string name="listen_together_listening">Mendengarkan · %1$d dari %2$d</string>
+    <string name="listen_together_members_footer">Satu pesta menampung %1$d perangkat. Siapa pun di dalamnya bisa mengatur musik.</string>
+    <string name="listen_together_you">Kamu</string>
+    <string name="listen_together_host">Tuan rumah</string>
+    <string name="listen_together_away">Sedang menjauh — tempatnya ditahan</string>
+    <string name="listen_together_manage">Kelola</string>
+    <string name="listen_together_landing_title">Mulai pesta</string>
+    <string name="listen_together_landing_subtitle">Karena musik lebih seru didengar bersama. Ajak teman mendengarkan dan menambahkan lagu secara langsung, di mana pun mereka berada.</string>
+    <string name="listen_together_create_action">Buat pesta</string>
+    <string name="listen_together_join_existing">Ikut yang sudah ada</string>
+    <string name="listen_together_create_sheet_subtitle">Pilih bagaimana kamu tampil, dan berapa orang yang bisa ikut.</string>
+    <string name="listen_together_creating">Membuat…</string>
+    <string name="listen_together_joining">Bergabung…</string>
+    <string name="listen_together_full">Pesta ini sudah penuh</string>
+    <string name="listen_together_join_question">Ikut pesta %1$s?</string>
+    <string name="listen_together_join_question_unnamed">Ikut pesta ini?</string>
+    <string name="listen_together_not_now">Nanti saja</string>
+    <string name="listen_together_preview_footer">Orang di pesta akan melihat nama dan foto profilmu.</string>
+    <string name="listen_together_invite_title">Ajak teman ke pestamu</string>
+    <string name="listen_together_share_link">Bagikan link</string>
+    <string name="listen_together_scan_qr">Pindai kode QR</string>
+    <string name="listen_together_scan_qr_subtitle">Biarkan teman memindai ini untuk ikut.</string>
+    <string name="listen_together_invite">Undang</string>
+    <string name="listen_together_host_only">Hanya aku yang mengatur musik</string>
+    <string name="listen_together_host_only_subtitle">Yang lain ikut mendengarkan dan bisa menjeda di perangkat masing-masing</string>
+    <string name="listen_together_host_only_notice">Hanya host yang bisa mengatur musik</string>
+    <string name="listen_together_leave">Keluar dari pesta</string>
+    <string name="listen_together_leave_subtitle">Yang lain tetap mendengarkan</string>
+    <string name="listen_together_reconnecting">Menyambung ulang…</string>
+    <string name="listen_together_syncing_clock">Mengukur jam…</string>
+    <string name="listen_together_in_sync">Sinkron · %1$d ms bolak-balik</string>
+    <string name="listen_together_jam">Sesi %1$s</string>
+    <string name="listen_together_jam_unnamed">Mendengar bersama</string>
+    <string name="listen_together_open">Dengar bersama</string>
+    <string name="listen_together_open_count">Mendengar bersama · %1$d</string>
+    <string name="listen_together_custom_server_dialog_title">Ikut pesta di server kustom?</string>
+    <string name="listen_together_custom_server_dialog_message">Pesta ini di-host di server eksternal:\n\n%1$s\n\nMau mengganti server pesta dan ikut pesta %2$s?</string>
+    <string name="listen_together_custom_server_switch_and_join">Ganti &amp; Ikut</string>
+    <string name="listen_together_official_server_dialog_title">Beralih ke server resmi?</string>
+    <string name="listen_together_official_server_dialog_message">Pesta ini di-host di server resmi BitChord.\n\nMau kembali ke server resmi dan ikut pesta %1$s?</string>
+    <string name="listen_together_switch_failed_stayed_in_party">Gagal ikut pesta: %1$s. Tetap di pesta %2$s.</string>
+    <string name="listen_together_switch_failed">Gagal ikut pesta: %1$s.</string>
+    <string name="listen_together_ping">%1$d ms</string>
+    <string name="listen_together_server_offline_dash">—</string>
+    <string name="listen_together_invalid_server_url">URL server tidak valid. Masukkan alamat yang valid (mis. https://your-server.com)</string>
+    <string name="listen_together_err_whitespace">URL server tidak boleh berisi spasi</string>
+    <string name="listen_together_err_invalid_path">URL server berisi path yang tidak valid</string>
+    <string name="listen_together_err_no_path">URL server tidak boleh menyertakan path</string>
+    <string name="listen_together_err_no_query">URL server tidak boleh menyertakan parameter query</string>
+    <string name="listen_together_err_no_fragment">URL server tidak boleh menyertakan fragmen</string>
+    <string name="listen_together_err_invalid_port">Port server harus antara 1 dan 65535</string>
+    <string name="listen_together_custom_server_connected">Terhubung ke server kustom</string>
+    <string name="listen_together_custom_server_unreachable_fallback">Server kustom tidak terjangkau. Memakai server cadangan bawaan.</string>
+    <string name="listen_together_status_custom_online">Terhubung ke server kustom · %1$d ms</string>
+    <string name="listen_together_status_custom_fallback">Server kustom tidak terjangkau · Memakai cadangan bawaan (%1$d ms)</string>
+    <string name="listen_together_status_all_offline">Server kustom dan server bawaan sama-sama offline</string>
+    <string name="listen_together_top_bar_fallback">Cadangan · %1$s</string>
+
+    <string name="vietnamese">Vietnam</string>
+
+    <string name="miscellaneous_footer">Jika diaktifkan, menutup aplikasi dari layar aplikasi terbaru juga akan menghentikan pemutaran musik.</string>
+
+
+    <plurals name="track_count_plural">
+        <item quantity="other">%1$d lagu</item>
+    </plurals>
+
+    <string name="account_profiles_help">Akun Google dapat memiliki profil Pribadi dan Merek. Masing-masing memiliki perpustakaan dan histori sendiri.</string>
+
+    <string name="accounts">Akun</string>
+
+    <string name="add_account">Tambah akun</string>
+
+    <string name="add_addon">Tambah addon</string>
+
+    <string name="add_addon_detail">Arahkan BitChord ke server addon yang Anda miliki atau bagikan tautan</string>
+
+    <string name="addon_url_description">Tempel URL addon — direktori utama atau manifest.json.</string>
+
+    <string name="advanced_options">Opsi lanjutan</string>
+
+    <string name="automix_mode_balanced">Seimbang</string>
+
+    <string name="automix_mode_balanced_subtitle">2 thread · keseimbangan kecepatan dan baterai yang disarankan</string>
+
+    <string name="automix_mode_efficient">Efisien</string>
+
+    <string name="automix_mode_efficient_subtitle">1 thread · panas dan penggunaan baterai terendah</string>
+
+    <string name="automix_mode_performance">Performa</string>
+
+    <string name="automix_mode_performance_subtitle">4 thread · analisis tercepat · penggunaan baterai lebih tinggi</string>
+
+    <string name="automix_not_supported_video">Automix tidak didukung pada lagu video</string>
+    <string name="automix_stopped_in_party">Automix: dihentikan saat Dengar bersama</string>
+
+    <string name="automix_performance">Performa Automix</string>
+
+    <string name="automix_performance_subtitle">Mengatur seberapa banyak CPU yang dapat digunakan analisis latar belakang</string>
+
+    <string name="automix_performance_warning">Performa lebih tinggi menganalisis lebih cepat tetapi menggunakan lebih banyak baterai.</string>
+
+    <string name="blur_unfocused_lyrics">Buramkan lirik yang tidak aktif</string>
+
+    <string name="blur_unfocused_lyrics_subtitle">Menjaga fokus pada baris saat ini</string>
+
+    <string name="brand_account">Akun merek</string>
+
+    <string name="card_plays_format">%1$s diputar</string>
+
+    <string name="card_songs_format">%1$s lagu</string>
+
+    <string name="card_views_format">%1$s tayangan</string>
+
+    <string name="channel_session_unavailable">Belum ada sesi di sini — buka YouTube Music terlebih dahulu</string>
+
+    <string name="channel_switch_instructions">Beralih dengan avatar, lalu ketuk Gunakan channel ini</string>
+
+    <string name="choose_a_channel">Pilih channel</string>
+
+    <string name="choose_profile">Pilih profil</string>
+
+    <string name="convert_to_audio">Konversi ke audio</string>
+    <string name="convert_to_video">Ubah ke video</string>
+
+    <string name="converting_to_audio">Mengonversi ke audio…</string>
+
+    <string name="current_account">Akun saat ini</string>
+
+    <string name="current_profile">Profil saat ini</string>
+
+    <string name="default_youtube_profile">Profil default YouTube Music</string>
+
+    <string name="dolby_atmos">Dolby Atmos</string>
+
+    <string name="dolby_atmos_subtitle">Putar versi suara surround yang lebih imersif jika tersedia.</string>
+
+    <string name="dolby_atmos_unavailable">Perangkat ini tidak mendukung Atmos, lagu diputar dalam versi standar</string>
+
+    <string name="export_compatible_downloads">Ekspor unduhan yang kompatibel</string>
+
+    <string name="legacy_mesh_gradient">Gradien mesh klasik</string>
+
+    <string name="legacy_mesh_gradient_subtitle">Kembalikan efek warna mengalir di belakang pemutar dari v1.5</string>
+
+    <string name="liquid_glass">Kaca Cair</string>
+
+    <string name="liquid_glass_subtitle">Efek kaca pada bilah navigasi. Khusus Android 12+.</string>
+
+    <string name="liquid_glass_unavailable">Memerlukan Android 12 atau yang lebih baru</string>
+
+    <string name="listen_as">Dengarkan sebagai</string>
+
+    <string name="lyrics_debug_logs">Log debug lirik</string>
+
+    <string name="lyrics_debug_logs_subtitle">Tampilkan kueri API langsung di panel lirik</string>
+
+    <string name="manage_accounts">Kelola akun</string>
+
+    <string name="output_precision">Presisi output</string>
+
+    <string name="personal">Pribadi</string>
+
+    <string name="playing_radio">Memutar Radio %1$s</string>
+
+    <string name="playlist_action">Playlist</string>
+
+    <string name="prefer_usb_dac">Pilih DAC USB</string>
+    <string name="loudness_normalization">Normalisasi kenyaringan</string>
+    <string name="loudness_normalization_subtitle">Menyamakan kenyaringan setiap lagu</string>
+    <string name="loudness_target">Target kenyaringan</string>
+    <string name="loudness_target_subtitle">Lebih pelan cocok untuk headphone; lebih keras cocok untuk mobil atau speaker ponsel</string>
+    <string name="loudness_target_value">%1$s LUFS</string>
+    <string name="pipeline_loudness">Kenyaringan</string>
+    <string name="pipeline_loudness_gain">Gain</string>
+    <string name="pipeline_loudness_measured">Terukur</string>
+    <string name="pipeline_bit_exact">Bit-exact</string>
+    <string name="loudness_measuring">Mengukur…</string>
+    <string name="loudness_gain_db">%1$s dB</string>
+    <string name="loudness_lufs">%1$s LUFS</string>
+
+    <string name="profile_unavailable">Belum ada profil masuk yang tersedia di halaman ini.</string>
+
+    <string name="profiles">Profil</string>
+
+    <string name="radio_started">Radio %1$s dimulai</string>
+
+    <string name="revert_to_original">Kembalikan ke asli</string>
+
+    <string name="scrobble_primary_artist_only">Hanya scrobble artis utama</string>
+
+    <string name="scrobble_primary_artist_only_subtitle">Gunakan artis pertama jika ada beberapa artis yang dikreditkan</string>
+
+    <string name="select_all">Pilih semua</string>
+
+    <string name="selected_account">Akun terpilih</string>
+
+    <string name="shelf_100_on_repeat">Diputar berulang kali</string>
+
+    <string name="shelf_artists_on_the_rise">Artis pendatang baru</string>
+
+    <string name="shelf_chart">Tangga lagu</string>
+
+    <string name="shelf_charts">Tangga lagu</string>
+
+    <string name="shelf_commute">Perjalanan</string>
+
+    <string name="shelf_concerts">Konser</string>
+
+    <string name="shelf_energy_boosters">Penambah energi</string>
+
+    <string name="shelf_featured_playlists_for_you">Playlist pilihan untuk Anda</string>
+
+    <string name="shelf_feel_good">Penuh semangat</string>
+
+    <string name="shelf_focus">Fokus</string>
+
+    <string name="shelf_for_you">Untuk Anda</string>
+
+    <string name="shelf_forgotten_favorites">Favorit terlupakan</string>
+
+    <string name="shelf_from_the_community">Dari komunitas</string>
+
+    <string name="shelf_from_your_library">Dari perpustakaan Anda</string>
+
+    <string name="shelf_hits_today">Hits hari ini</string>
+
+    <string name="shelf_listen_again">Dengarkan lagi</string>
+
+    <string name="shelf_mixed_for_you">Campuran untuk Anda</string>
+
+    <string name="shelf_new_albums_singles">Album &amp; single baru</string>
+
+    <string name="shelf_new_releases">Rilisan baru</string>
+
+    <string name="shelf_party">Pesta</string>
+
+    <string name="shelf_quick_picks">Pilihan cepat</string>
+
+    <string name="shelf_recents">Terbaru</string>
+
+    <string name="shelf_recommended_music_videos">Video musik yang direkomendasikan</string>
+
+    <string name="shelf_relax">Santai</string>
+
+    <string name="shelf_romance">Romantis</string>
+
+    <string name="shelf_sad">Galau</string>
+
+    <string name="shelf_shorts">Shorts</string>
+
+    <string name="shelf_similar_to">Mirip dengan %1$s</string>
+
+    <string name="shelf_single">Single</string>
+
+    <string name="shelf_sleep">Tidur</string>
+
+    <string name="shelf_song_item">Lagu</string>
+
+    <string name="shelf_top_music_videos">Video musik teratas</string>
+
+    <string name="shelf_top_tunes_right_now">Lagu populer saat ini</string>
+
+    <string name="shelf_trending">Sedang tren</string>
+
+    <string name="shelf_trending_community_playlists">Playlist komunitas populer</string>
+
+    <string name="shelf_workout">Olahraga</string>
+
+    <string name="shelf_youtube_charts">Tangga Lagu YouTube</string>
+
+    <string name="sort_date_added_oldest">Tanggal ditambahkan (terlama lebih dulu)</string>
+
+    <string name="sort_date_added_toggle">Tanggal ditambahkan</string>
+
+    <string name="sort_default">Urutan default</string>
+
+    <string name="sort_library">Urutkan</string>
+
+    <string name="sort_songs">Urutkan lagu</string>
+
+    <string name="source_already_added">Sudah ditambahkan sebagai %1$s</string>
+
+    <string name="source_skipped_by_quality">Tidak digunakan pada %1$s · kualitas diatur ke %2$s</string>
+
+    <string name="source_unrecognised">BitChord tidak mengenali tautan tersebut</string>
+
+    <string name="start_radio">Mulai radio</string>
+
+    <string name="subscribe">Langganan</string>
+
+    <string name="subscriptions">Langganan</string>
+
+    <string name="switch_account">Ganti akun</string>
+
+    <string name="switch_profile_hint">Beralih menggunakan avatar, lalu gunakan profil ini.</string>
+
+    <string name="unsubscribe">Berhenti berlangganan</string>
+
+    <string name="upgrade_quality">Tingkatkan kualitas</string>
+
+    <string name="use_this_channel">Gunakan channel ini</string>
+
+    <string name="use_this_profile">Gunakan profil ini</string>
+
+
+    <string name="lyrics_offset">Lyrics offset</string>
+
+    <string name="lyrics_offset_description">Positive values show lyrics later</string>
+
+    <string name="lyrics_offset_reset">Reset</string>
+
+    <string name="decrease_lyrics_offset">Decrease lyrics offset</string>
+
+    <string name="increase_lyrics_offset">Increase lyrics offset</string>
+
+    <string name="auto_quick_picks">Quick picks</string>
+
+    <string name="auto_recents">Recent</string>
+
+    <string name="auto_liked">Liked songs</string>
+
+    <string name="auto_login_title">Sign in to YouTube on your phone</string>
+
+    <string name="auto_login_subtitle">Open BitChord on your phone to sign in</string>
+
+    <string name="auto_empty_recents_title">No recent songs</string>
+
+    <string name="auto_empty_recents_subtitle">Songs you play will appear here</string>
+
+    <string name="auto_empty_quick_picks_title">No suggestions</string>
+
+    <string name="auto_empty_quick_picks_subtitle">Check your connection and try again</string>
+
+    <string name="auto_empty_playlists_title">No playlists available</string>
+
+    <string name="auto_empty_playlists_subtitle">Check your connection and try again</string>
+
+    <string name="auto_empty_liked_title">No liked songs</string>
+
+    <string name="auto_empty_liked_subtitle">Tap the heart on a song to save it here</string>
+
+    <string name="auto_empty_offline_title">No offline songs</string>
+
+    <string name="auto_empty_offline_subtitle">Download songs on your phone to listen here</string>
+
+    <string name="auto_unavailable_title">Content unavailable</string>
+
+    <string name="auto_unavailable_subtitle">Reopen the folder and try again</string>
+
+    <string name="settings_search_hint">Search settings</string>
+
+    <string name="settings_search_empty">No settings match “%1$s”</string>
+
+    <string name="prefer_music_only">Prefer music-only version</string>
+
+    <string name="prefer_music_only_subtitle">For music videos, show the video details while finding and loading the catalogue audio version</string>
+    <string name="smart_version_alignment">Penyelarasan audio cerdas</string>
+    <string name="smart_version_alignment_subtitle">Menganalisis gelombang audio untuk mencocokkan momen pemutaran yang tepat</string>
+
+    <string name="equalizer_footer">Shapes the sound inside BitChord, before it reaches the system.</string>
+
+    <string name="equalizer_dynamic">Dynamic</string>
+
+    <string name="equalizer_manual">Manual</string>
+
+    <string name="equalizer_tone">Tone</string>
+
+    <string name="equalizer_tilt">Tilt</string>
+
+    <string name="equalizer_contour">Contour</string>
+
+    <string name="equalizer_broad">Broad</string>
+
+    <string name="equalizer_focused">Focused</string>
+
+    <string name="equalizer_broad_footer">Drag left for a warmer sound and right for a brighter one; down scoops the middle, up brings it forward. Broad moves wide stretches of the spectrum at once.</string>
+
+    <string name="equalizer_focused_footer">Drag left for a warmer sound and right for a brighter one; down scoops the middle, up brings it forward. Focused works on narrower stretches, so it changes less around what it moves.</string>
+
+    <string name="equalizer_preset">Preset</string>
+
+    <string name="equalizer_bands">Bands</string>
+
+    <string name="equalizer_bands_footer">Moving a band leaves the preset behind and the curve becomes your own.</string>
+
+    <string name="equalizer_reset">Reset all bands</string>
+
+    <string name="equalizer_balance">Balance</string>
+
+    <string name="equalizer_balance_left">L</string>
+
+    <string name="equalizer_balance_right">R</string>
+
+    <string name="equalizer_balance_footer">Shifts the sound towards one ear by quietening the other.</string>
+    <string name="equalizer_bitstream_title">Tidak berjalan saat ini</string>
+    <string name="equalizer_bitstream_subtitle">Lagu ini dikirim ke output tanpa didekode</string>
+    <string name="equalizer_bitstream_footer">Equalizer bekerja pada audio yang sudah didekode. Lagu ini diteruskan sebagai bitstream untuk didekode oleh perangkatmu, jadi tidak ada sampel yang bisa difilter di sini.</string>
+
+    <string name="system_equalizer">System equalizer</string>
+
+    <string name="system_equalizer_subtitle">Your device\'s own panel</string>
+
+    <string name="system_equalizer_footer">Runs after BitChord\'s, on the whole audio session. Using both applies both.</string>
+
+    <string name="eq_preset_flat">Flat</string>
+
+    <string name="eq_preset_acoustic">Acoustic</string>
+
+    <string name="eq_preset_bass_boost">Bass boost</string>
+
+    <string name="eq_preset_bass_cut">Bass cut</string>
+
+    <string name="eq_preset_vocal">Vocal</string>
+
+    <string name="eq_preset_treble_boost">Treble boost</string>
+
+    <string name="eq_preset_treble_cut">Treble cut</string>
+
+    <string name="eq_preset_loudness">Loudness</string>
+
+    <string name="eq_preset_spoken_word">Spoken word</string>
+
+    <string name="eq_preset_electronic">Electronic</string>
+
+    <string name="eq_preset_rock">Rock</string>
+
+    <string name="eq_preset_hip_hop">Hip-hop</string>
+
+    <string name="eq_preset_jazz">Jazz</string>
+
+    <string name="eq_preset_classical">Classical</string>
+
+    <string name="eq_preset_small_speakers">Small speakers</string>
+
+    <string name="eq_preset_late_night">Late night</string>
+
+    <string name="eq_preset_custom">Custom</string>
+
+    <string name="translation_language">Translation language</string>
+
+    <string name="translation_language_description">The language the translate button turns lyrics into.</string>
+
+    <string name="translation_language_app_default">App language</string>
+
+    <string name="translation_language_subtitle">Follows the app language</string>
+
+    <string name="search_languages">Search languages</string>
+
+    <string name="no_languages_match">No languages match</string>
+
+    <string name="data_saver">Data-Saver</string>
+
+    <string name="medium_quality">Medium Quality</string>
+
+    <string name="audio_pipeline">Audio Pipeline</string>
+    <string name="audio_pipeline_subtitle">Jalur sinyal langsung, dari dekoder ke output</string>
+
+    <string name="pipeline_track_info">Track Info</string>
+
+    <string name="pipeline_decoder">Decoder</string>
+
+    <string name="pipeline_resampler">Resampler</string>
+
+    <string name="pipeline_dsp">DSP</string>
+
+    <string name="pipeline_output_device">Output Device</string>
+
+    <string name="pipeline_source">Source</string>
+
+    <string name="pipeline_format">Format</string>
+
+    <string name="pipeline_bit_depth">Bit Depth</string>
+
+    <string name="pipeline_sample_rate">Sample Rate</string>
+
+    <string name="pipeline_bitrate">Bitrate</string>
+
+    <string name="pipeline_channels">Channels</string>
+
+    <string name="pipeline_decoder_name">Decoder Name</string>
+
+    <string name="pipeline_io_rate">I/O Rate</string>
+
+    <string name="pipeline_type">Type</string>
+
+    <string name="pipeline_cutoff">Cutoff</string>
+
+    <string name="pipeline_quality">Quality</string>
+
+    <string name="pipeline_pcm_format">PCM Format</string>
+
+    <string name="pipeline_eq_preset">EQ Preset</string>
+
+    <string name="pipeline_stereo_expand">Stereo Expand</string>
+
+    <string name="pipeline_buffers">Buffers</string>
+
+    <string name="pipeline_output_api">Output API</string>
+
+    <string name="pipeline_device_name">Device Name</string>
+
+    <string name="playing_from">Playing from %1$s</string>
+
+    <string name="played_by">Played by %1$s</string>
+
+    <string name="shared_link">Shared link</string>
+
+    <string name="song_will_play_next">Song will play next</string>
+
+    <string name="song_added_to_queue">Song added to queue</string>
+    <string name="song_added_to_playlist">Ditambahkan ke playlist</string>
+    <string name="song_already_in_playlist">Sudah ada di playlist</string>
+    <string name="party_queue_full">Antrean penuh (maksimal %d lagu di pesta)</string>
+
+    <string name="paxsenix_api_key">PaxSenix API key</string>
+
+    <string name="paxsenix_api_key_configured">PaxSenix API key — configured</string>
+
+    <string name="paxsenix_api_key_missing">PaxSenix API key — optional, not configured</string>
+
+    <string name="open_lyrics">Lyrics</string>
+
+    <string name="audio_output">Audio output</string>
+
+    <string name="audio_output_playing">Playing here</string>
+
+    <string name="wired_headphones">Wired headphones</string>
+
+    <string name="usb_audio">USB audio</string>
+
+    <string name="hdmi_output">HDMI</string>
+
+    <string name="personal_phone">%1$s’s Phone</string>
+
+    <string name="this_phone">This phone</string>
+
+
+
 </resources>

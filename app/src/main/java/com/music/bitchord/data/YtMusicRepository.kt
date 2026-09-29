@@ -36,6 +36,16 @@ object YtMusicRepository {
 
     private const val TAG = "BitChord"
     private val moodGenreShelfCache = ConcurrentHashMap<String, List<HomeShelf>>()
+    // Includes unchanged video fallbacks as well as successful matches. The
+    // queue prefetcher asks before a track becomes current; remembering its
+    // answer makes the eventual player switch use the exact rendition whose
+    // bytes were warmed, without repeating a 10–30 second catalogue search.
+    private val audioVersionCache = ConcurrentHashMap<String, Song>()
+    // Cache for video version lookups from audio tracks (null means no video found).
+    private val videoVersionCache = ConcurrentHashMap<String, Song?>()
+
+    fun cachedAudioVersion(videoId: String): Song? = audioVersionCache[videoId]
+    fun cachedVideoVersion(videoId: String): Song? = videoVersionCache[videoId]
 
     /**
      * The core personalised feed. It stays deliberately independent from the
@@ -162,7 +172,12 @@ object YtMusicRepository {
         }
         val qpSongs = qpShelf?.items?.mapNotNull { item ->
             item.videoId?.takeUnless { it in excludeSongIds }?.let { vid ->
-                Song(videoId = vid, title = item.title, artist = item.subtitle, thumbnailUrl = item.thumbnailUrl)
+                Song(
+                    videoId = vid,
+                    title = item.title,
+                    artist = InnertubeParser.artistFromSubtitle(item.subtitle),
+                    thumbnailUrl = item.thumbnailUrl,
+                )
             }
         }.orEmpty()
         if (qpSongs.isNotEmpty()) return@call qpSongs
@@ -179,7 +194,12 @@ object YtMusicRepository {
         val homeShelfSongs = candidateShelves.flatMap { shelf ->
             shelf.items.mapNotNull { item ->
                 item.videoId?.takeUnless { it in excludeSongIds }?.let { vid ->
-                    Song(videoId = vid, title = item.title, artist = item.subtitle, thumbnailUrl = item.thumbnailUrl)
+                    Song(
+                        videoId = vid,
+                        title = item.title,
+                        artist = InnertubeParser.artistFromSubtitle(item.subtitle),
+                        thumbnailUrl = item.thumbnailUrl,
+                    )
                 }
             }
         }.distinctBy { it.videoId }
@@ -190,7 +210,12 @@ object YtMusicRepository {
         val allHomeTrackSongs = shelves.flatMap { shelf ->
             shelf.items.mapNotNull { item ->
                 item.videoId?.let { vid ->
-                    Song(videoId = vid, title = item.title, artist = item.subtitle, thumbnailUrl = item.thumbnailUrl)
+                    Song(
+                        videoId = vid,
+                        title = item.title,
+                        artist = InnertubeParser.artistFromSubtitle(item.subtitle),
+                        thumbnailUrl = item.thumbnailUrl,
+                    )
                 }
             }
         }.distinctBy { it.videoId }
@@ -203,7 +228,12 @@ object YtMusicRepository {
         val exploreSongs = explore.flatMap { shelf ->
             shelf.items.mapNotNull { item ->
                 item.videoId?.takeUnless { it in excludeSongIds }?.let { vid ->
-                    Song(videoId = vid, title = item.title, artist = item.subtitle, thumbnailUrl = item.thumbnailUrl)
+                    Song(
+                        videoId = vid,
+                        title = item.title,
+                        artist = InnertubeParser.artistFromSubtitle(item.subtitle),
+                        thumbnailUrl = item.thumbnailUrl,
+                    )
                 }
             }
         }.distinctBy { it.videoId }
@@ -304,6 +334,28 @@ object YtMusicRepository {
         }
 
     /**
+     * Live media results for the typeahead phase — a lightweight search that
+     * returns tracks, artists, and albums so the dropdown can show playable
+     * cards alongside text completions. Uses the ALL filter to get mixed
+     * results quickly; callers may want to limit how many they display.
+     *
+     * Deliberately unauthenticated: [Innertube.searchTypeahead] strips the
+     * session cookie so YouTube Music does not log each debounced keystroke
+     * to the account's server-side search history. Confirmed searches (Enter /
+     * IME Search / tapping a suggestion) still use the normal authenticated
+     * [searchPage] path and are recorded properly.
+     */
+    suspend fun searchTypeahead(input: String): Result<SearchPage> =
+        call("typeahead:$input") {
+            InnertubeParser.parseSearchPage(
+                Innertube.searchTypeahead(input),
+                includeVideos = false,
+            ).let { page ->
+                SearchPage(page.rows.distinctBy { it.identityKey() }, page.continuation)
+            }
+        }
+
+    /**
      * The catalogue (audio-only) release of a music-video upload, found the
      * same way the "Switch to audio" toggle in the real app would land on
      * it: searching the title and artist and taking the closest song match.
@@ -331,6 +383,7 @@ object YtMusicRepository {
      */
     suspend fun resolveAudio(song: Song): Song {
         if (!song.isVideo) return song
+        audioVersionCache[song.videoId]?.let { return it }
         val target = TrackMatcher.targetOf(song)
         for (query in TrackMatcher.queries(target)) {
             val candidates = search(query, SearchFilter.SONGS)
@@ -340,6 +393,7 @@ object YtMusicRepository {
                 .orEmpty()
             TrackMatcher.best(candidates, target)?.let { match ->
                 Log.d(TAG, "audio switch: '${song.title}' -> '${match.title}' ($query)")
+                audioVersionCache[song.videoId] = match
                 return match
             }
             // Music-video timing is visual timing, not the audio release's
@@ -347,11 +401,42 @@ object YtMusicRepository {
             // song/artist match even when the video has a long intro or outro.
             TrackMatcher.bestOfficialAudioForVideo(candidates, target)?.let { match ->
                 Log.d(TAG, "audio switch: accepted video/runtime drift '${song.title}' -> '${match.title}' ($query)")
+                audioVersionCache[song.videoId] = match
                 return match
             }
         }
         Log.w(TAG, "audio switch: no official song match for '${song.title}' by '${song.artist}'")
+        audioVersionCache[song.videoId] = song
         return song
+    }
+
+    /**
+     * The inverse of [resolveAudio]: finds the video/music-video version of an
+     * audio-only track, used when switching back from audio to video.
+     * Resolves an audio-only track to its video version.
+     *
+     * This is the inverse of [resolveAudio] - it finds the music video
+     * for a catalogue track. Returns null when no video version is found.
+     */
+    suspend fun resolveVideo(song: Song): Song? {
+        if (song.isVideo) return null
+        videoVersionCache[song.videoId]?.let { return it }
+        val target = TrackMatcher.targetOf(song)
+        for (query in TrackMatcher.queries(target)) {
+            val candidates = search(query, SearchFilter.VIDEOS)
+                .getOrNull()
+                ?.filterIsInstance<SearchResult.Track>()
+                ?.map { it.song }
+                .orEmpty()
+            TrackMatcher.best(candidates, target)?.let { match ->
+                Log.d(TAG, "video switch: '${song.title}' -> '${match.title}' ($query)")
+                videoVersionCache[song.videoId] = match
+                return match
+            }
+        }
+        Log.w(TAG, "video switch: no video match for '${song.title}' by '${song.artist}'")
+        videoVersionCache[song.videoId] = null
+        return null
     }
 
     /** Signed-in profile for the settings header. Null when signed out. */
@@ -391,7 +476,13 @@ object YtMusicRepository {
      */
     suspend fun library(): Result<LibraryPage> = call("library") {
         coroutineScope {
-            val liked = async { runCatching { songsPaged(LIKED_MUSIC) }.getOrDefault(emptyList()) }
+            // Liked Music is read one page at a time. The first page is what
+            // the Library tab needs to fill and is published straight away;
+            // the rest of the collection is synced into LikeState in the
+            // background, so a liked track past the first page still reads as
+            // liked without holding this page open behind the whole list —
+            // see [syncLikedMusic] and MainViewModel's fetchLibrary.
+            val liked = async { browseSongs(LIKED_MUSIC).getOrNull() }
             val added = async { runCatching { songsPaged(LIBRARY_SONGS) }.getOrDefault(emptyList()) }
             val shelves = LIBRARY_FEEDS
                 .map { (title, browseId) ->
@@ -402,7 +493,8 @@ object YtMusicRepository {
                 .awaitAll()
                 .filter { it.items.isNotEmpty() }
 
-            val likedSongs = liked.await()
+            val likedPage = liked.await()
+            val likedSongs = likedPage?.songs.orEmpty()
             val likedIds = likedSongs.mapTo(HashSet()) { it.videoId }
             LikeState.seedLiked(likedIds)
             LibraryPage(
@@ -412,7 +504,43 @@ object YtMusicRepository {
                 // second section.
                 librarySongs = added.await().filterNot { it.videoId in likedIds },
                 shelves = shelves,
+                likedContinuation = likedPage?.continuation,
             )
+        }
+    }
+
+    /**
+     * Finishes syncing the liked collection into [LikeState], following
+     * [firstToken] page by page until the feed runs dry.
+     *
+     * Unlike [songsPaged]'s [MAX_PAGES], this is deliberately unbounded: it
+     * seeds only video ids (not the full [Song]s), so syncing a long Liked
+     * Music library stays cheap, and stopping at a page cap would leave every
+     * liked track past that page reading as "not liked" — the very symptom
+     * #219 reported.
+     *
+     * [loadNext] is injectable so the pagination loop is unit-testable; the
+     * default reads through [moreSongs] and stops on a failed page rather
+     * than surfacing an error for a background sync. Cancellation is
+     * cooperative and the caller (a ViewModel scope in the app) decides when
+     * this outlives its usefulness.
+     *
+     * Guards only against a token repeating — a page pointing back at one
+     * already read, which would otherwise spin forever — rather than a page
+     * count, since a genuinely large library is exactly what this exists to
+     * keep reading.
+     */
+    suspend fun syncLikedMusic(
+        firstToken: String?,
+        loadNext: suspend (String) -> SongPage? = { moreSongs(it).getOrNull() },
+    ) {
+        if (firstToken == null) return
+        val seen = HashSet<String>()
+        var next: String? = firstToken
+        while (next != null && seen.add(next)) {
+            val page = loadNext(next) ?: return
+            LikeState.seedLiked(page.songs.mapTo(HashSet()) { it.videoId })
+            next = page.continuation
         }
     }
 
@@ -484,11 +612,34 @@ object YtMusicRepository {
      */
     suspend fun browseSongs(browseId: String): Result<SongPage> = call("browse:$browseId") {
         val response = Innertube.browse(browseId)
-        val page = pageOf(response)
+        val page = if (browseId.startsWith("MPREb")) {
+            albumPageOf(response)
+        } else {
+            pageOf(response)
+        }
         // Only a playlist has an owner in the sense that matters — see
         // parsePlaylistOwned — and only its own first response can be asked.
         if (!browseId.startsWith("VL")) page
         else page.copy(owned = InnertubeParser.parsePlaylistOwned(response))
+    }
+
+    /**
+     * Joins an album's metadata page to its authoritative track listing.
+     *
+     * Catalogue album pages sometimes carry only a handful of preview rows.
+     * Their header play action names a backing playlist containing every track,
+     * so read songs and pagination from there while retaining the richer album
+     * header and controls from the original response.
+     */
+    private suspend fun albumPageOf(albumResponse: JsonObject): SongPage {
+        val metadata = pageOf(albumResponse)
+        val playlistId = InnertubeParser.parseAlbumPlaylistId(albumResponse) ?: return metadata
+        val tracks = pageOf(Innertube.browse("VL${playlistId.removePrefix("VL")}"))
+        return tracks.copy(
+            library = metadata.library,
+            header = metadata.header,
+            description = metadata.description,
+        )
     }
 
     /** The page [SongPage.continuation] points at. */
@@ -562,6 +713,11 @@ object YtMusicRepository {
     private suspend fun songsPaged(browseId: String): List<Song> {
         val out = LinkedHashMap<String, Song>()
         var response = Innertube.browse(browseId)
+        if (browseId.startsWith("MPREb")) {
+            InnertubeParser.parseAlbumPlaylistId(response)?.let { playlistId ->
+                response = Innertube.browse("VL${playlistId.removePrefix("VL")}")
+            }
+        }
         var page = 1
         while (true) {
             // Same shelf-scoping as pageOf: a playlist (Liked Music and the
@@ -585,9 +741,9 @@ object YtMusicRepository {
      * so collecting the full bounded set before publishing is preferable to a
      * shelf that looks complete and silently is not.
      */
-    private suspend fun libraryItemsPaged(browseId: String): List<ShelfItem> {
+    private suspend fun itemsPaged(browseId: String, params: String? = null): List<ShelfItem> {
         val out = LinkedHashMap<String, ShelfItem>()
-        var response = Innertube.browse(browseId)
+        var response = Innertube.browse(browseId, params)
         var page = 1
         while (true) {
             val parsed = InnertubeParser.parseLibraryItemPage(response)
@@ -601,6 +757,8 @@ object YtMusicRepository {
         }
         return out.values.toList()
     }
+
+    private suspend fun libraryItemsPaged(browseId: String): List<ShelfItem> = itemsPaged(browseId, null)
 
     const val MAX_PAGES = 10
 
@@ -728,14 +886,39 @@ object YtMusicRepository {
 
     /**
      * Artist page. The landing page only lists ~5 songs, so the linked
-     * "Top songs" playlist is fetched to fill the list out.
+     * "Top songs" playlist is fetched to fill the list out, and any linked
+     * full release shelves (Albums, Singles & EPs) are fetched to populate
+     * their complete discography.
      */
     suspend fun artistPage(browseId: String): Result<ArtistPage> = call("artist:$browseId") {
         val page = InnertubeParser.parseArtistPage(Innertube.browse(browseId))
-        val fullSongs = page.moreSongsBrowseId?.let { playlistId ->
-            runCatching { songsPaged(playlistId) }.getOrNull()
+        coroutineScope {
+            val fullSongsDeferred = async {
+                page.moreSongsBrowseId?.let { playlistId ->
+                    runCatching { songsPaged(playlistId) }.getOrNull()
+                }
+            }
+            val shelvesDeferred = page.sections.map { shelf ->
+                async {
+                    if (shelf.moreBrowseId != null) {
+                        val fullItems = runCatching {
+                            itemsPaged(shelf.moreBrowseId, shelf.moreParams)
+                        }.getOrNull()
+                        if (!fullItems.isNullOrEmpty()) {
+                            shelf.copy(items = fullItems)
+                        } else {
+                            shelf
+                        }
+                    } else {
+                        shelf
+                    }
+                }
+            }
+            val fullSongs = fullSongsDeferred.await()
+            val fullShelves = shelvesDeferred.awaitAll()
+            val resolvedSongs = if (!fullSongs.isNullOrEmpty()) fullSongs else page.songs
+            page.copy(songs = resolvedSongs, sections = fullShelves)
         }
-        if (!fullSongs.isNullOrEmpty()) page.copy(songs = fullSongs) else page
     }
 
     private suspend fun <T> call(label: String, block: suspend () -> T): Result<T> =

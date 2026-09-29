@@ -10,13 +10,75 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Thick-stroke, round-capped icons in the spirit of Telegram's modern icon set.
- * Drawn as strokes (no fills) so the 2.2px weight + round joins read as a
- * single polished family. Tint is applied by [androidx.compose.material3.Icon].
+ * Drawn as strokes so the 2.2px weight + round joins read as a single polished
+ * family. Tint is applied by [androidx.compose.material3.Icon].
+ *
+ * [Home] is the exception and says why it is one.
  */
 object BitChordIcons {
 
     private const val STROKE = 2.2f
     private val stroke = SolidColor(Color.Black)
+
+    /** Compact list and quotation-bubble shapes used by the player controls. */
+    val Queue: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "bc_queue", defaultWidth = 24.dp, defaultHeight = 24.dp,
+            viewportWidth = 24f, viewportHeight = 24f,
+        ).apply {
+            path(stroke = stroke, strokeLineWidth = 2f, strokeLineCap = StrokeCap.Round) {
+                for (y in listOf(6f, 12f, 18f)) {
+                    moveTo(8f, y)
+                    lineTo(21f, y)
+                }
+            }
+            path(fill = stroke) {
+                for (y in listOf(6f, 12f, 18f)) {
+                    moveTo(4.35f, y)
+                    arcToRelative(1.25f, 1.25f, 0f, true, true, -2.5f, 0f)
+                    arcToRelative(1.25f, 1.25f, 0f, true, true, 2.5f, 0f)
+                    close()
+                }
+            }
+        }.build()
+    }
+
+    val LyricsQuote: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "bc_lyrics_quote", defaultWidth = 24.dp, defaultHeight = 24.dp,
+            viewportWidth = 24f, viewportHeight = 24f,
+        ).apply {
+            path(
+                stroke = stroke, strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round,
+            ) {
+                moveTo(6f, 3.5f)
+                lineTo(18f, 3.5f)
+                quadTo(21f, 3.5f, 21f, 6.5f)
+                lineTo(21f, 15f)
+                quadTo(21f, 18f, 18f, 18f)
+                lineTo(10f, 18f)
+                lineTo(6f, 21f)
+                lineTo(6f, 18f)
+                quadTo(3f, 18f, 3f, 15f)
+                lineTo(3f, 6.5f)
+                quadTo(3f, 3.5f, 6f, 3.5f)
+                close()
+            }
+            path(fill = stroke) {
+                for (x in listOf(7.6f, 12.8f)) {
+                    moveTo(x, 8f)
+                    lineTo(x + 3f, 8f)
+                    lineTo(x + 3f, 11.1f)
+                    quadTo(x + 3f, 13.2f, x + 0.5f, 13.7f)
+                    lineTo(x + 0.5f, 12.3f)
+                    quadTo(x + 1.7f, 12f, x + 1.7f, 11f)
+                    lineTo(x, 11f)
+                    close()
+                }
+            }
+        }.build()
+    }
 
     val Play: ImageVector by lazy {
         ImageVector.Builder(
@@ -34,6 +96,55 @@ object BitChordIcons {
                 moveTo(6.8f, 4.8f)
                 lineTo(19.2f, 12f)
                 lineTo(6.8f, 19.2f)
+                close()
+            }
+        }.build()
+    }
+
+    /**
+     * The one solid icon in the set, and the tab bar is why.
+     *
+     * Selection here is carried by tint alone — see `GlassNavBar`, where the
+     * unselected tabs are the same glyph at 65% — so the home tab is the anchor
+     * of the bar rather than a state of it, and a filled silhouette reads as
+     * that anchor at 24dp where a four-stroke outline reads as detail.
+     *
+     * Filled *and* stroked, with the same path. The outline of a house is all
+     * corners — an apex, two shoulders, two door jambs — and stroking the fill
+     * with a round-joined pen is what rounds every one of them at once, for a
+     * geometry that stays nine straight lines. The numbers below are therefore
+     * inset by half the stroke: the pen puts back what they give up, and the
+     * door notch is drawn oversized for the same reason, since the pen closes
+     * in on it from both jambs.
+     */
+    val Home: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "bc_home",
+            defaultWidth = 24.dp, defaultHeight = 24.dp,
+            viewportWidth = 24f, viewportHeight = 24f,
+        ).apply {
+            path(
+                fill = stroke,
+                stroke = stroke,
+                strokeLineWidth = 1.7f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            ) {
+                // Roof, flush with the walls rather than overhanging them: an
+                // eave narrower than the pen it is drawn with comes out as a
+                // blob on the corner instead of a ledge.
+                moveTo(12f, 4.05f)
+                lineTo(19.75f, 11.35f)
+                // Right wall, down to the floor
+                lineTo(19.75f, 19.65f)
+                // Door, cut up out of the bottom edge
+                lineTo(14.95f, 19.65f)
+                lineTo(14.95f, 15.6f)
+                lineTo(9.05f, 15.6f)
+                lineTo(9.05f, 19.65f)
+                // Left wall, back up to the apex
+                lineTo(4.25f, 19.65f)
+                lineTo(4.25f, 11.35f)
                 close()
             }
         }.build()
