@@ -402,6 +402,8 @@ fun SettingsScreen(
             // Sits with the account rather than with Playback: a party is up to
             // five signed-in people, and being signed in is the whole of what
             // the row needs before it will do anything.
+            // CAR EDITION: Disabled Listen Together social features to save CPU/Network.
+            /*
             val listenTogetherTitle = stringResource(R.string.listen_together)
             row(listenTogetherTitle, "jam", "party", "sync", "friends") {
                 SettingsRow(
@@ -414,6 +416,7 @@ fun SettingsScreen(
                     onClick = onListenTogether,
                 )
             }
+            */
         }
 
         // The row that used to sit at the top of this group was called
@@ -717,6 +720,8 @@ fun SettingsScreen(
             // Dolby or Dirac panel has something BitChord cannot reproduce and
             // keeps its row — but one level in, at the foot of the equaliser
             // screen, rather than as a second equaliser entry alongside ours.
+            // CAR EDITION: Disabled in-built Equalizer to avoid audio clipping on car DSPs.
+            /*
             val equalizerTitle = stringResource(R.string.equalizer)
             row(equalizerTitle, "eq", "bass", "treble") {
                 SettingsRow(
@@ -726,6 +731,7 @@ fun SettingsScreen(
                     onClick = onEqualizer,
                 )
             }
+            */
         }
 
         SearchableSettingsGroup(search, header = stringResource(R.string.appearance)) {
