@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.graphics.Bitmap
+import android.view.View
 import android.widget.RemoteViews
 import com.music.bitchord.MainActivity
 import com.music.bitchord.R
@@ -163,9 +164,12 @@ class MediaWidgetPill : AppWidgetProvider() {
                 R.id.widget_toggle,
                 context.getString(if (snapshot.isPlaying) R.string.widget_pause else R.string.widget_play),
             )
+            // Hidden rather than greyed, like the player's: the spacers either
+            // side of the transport share the room out evenly without it.
+            views.setViewVisibility(R.id.widget_like, if (snapshot.canLike) View.VISIBLE else View.GONE)
             views.setImageViewResource(
                 R.id.widget_like,
-                if (snapshot.isLiked) R.drawable.ic_widget_heart_filled else R.drawable.ic_widget_heart,
+                if (snapshot.isLiked) R.drawable.ic_widget_star_filled else R.drawable.ic_widget_star,
             )
             views.setContentDescription(
                 R.id.widget_like,

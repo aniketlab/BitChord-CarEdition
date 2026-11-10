@@ -46,6 +46,14 @@ import kotlin.math.tan
  * coefficients once per [GLIDE_FRAMES] frames, chasing the target curve
  * smoothly. This turns an abrupt preset switch into a short, inaudible glide
  * instead of a transient that would clip or click.
+ *
+ * ## Overs
+ *
+ * The make-up only takes back half of a boost ([EqCurve.preampDb]), so the
+ * odd peak can land past full scale. On the float path that is left alone
+ * here — a later stage may well turn it back down — and caught at the end of
+ * the chain by [LoudnessProcessor]'s limiter, which [isShaping] keeps engaged.
+ * The 16-bit path has nowhere to keep it, so it runs its own [PeakLimiter].
  */
 @UnstableApi
 class EqualizerProcessor : BaseAudioProcessor() {
@@ -85,6 +93,19 @@ class EqualizerProcessor : BaseAudioProcessor() {
     /** Output trim per channel: make-up attenuation, and balance where stereo. */
     private var channelGain = FloatArray(0)
 
+    /** One frame held back on the 16-bit path, so the limiter can see every channel of it. */
+    private var frame = FloatArray(0)
+
+    private val limiter = PeakLimiter()
+
+    /**
+     * Whether the last float block came out altered. Read by [DspChain] on the
+     * audio thread to keep the end-of-chain limiter engaged for as long as
+     * this can be pushing peaks past full scale.
+     */
+    var isShaping: Boolean = false
+        private set
+
     /**
      * Aims the equaliser. Called from whoever owns the settings, not from the
      * audio thread; nothing here is read until the next sub-block boundary.
@@ -114,7 +135,11 @@ class EqualizerProcessor : BaseAudioProcessor() {
         if (channelGain.size != channelCount) {
             channelGain = FloatArray(channelCount) { 1f }
         }
+        if (frame.size != channelCount) {
+            frame = FloatArray(channelCount)
+        }
         running.fill(false)
+        limiter.configure(sampleRate)
         snapToTarget()
     }
 
@@ -128,8 +153,10 @@ class EqualizerProcessor : BaseAudioProcessor() {
 
         val tuning = target
         if (isFlat(tuning) && isSettled(tuning)) {
+            isShaping = false
             return
         }
+        isShaping = true
 
         var remaining = frameCount
         var frameOffset = 0
@@ -175,13 +202,17 @@ class EqualizerProcessor : BaseAudioProcessor() {
     override fun onFlush() {
         state.fill(0f)
         running.fill(false)
+        limiter.reset()
         snapToTarget()
     }
 
     override fun onReset() {
         state = FloatArray(0)
         channelGain = FloatArray(0)
+        frame = FloatArray(0)
         running.fill(false)
+        limiter.reset()
+        isShaping = false
         channelCount = 0
         sampleRate = 0
     }
@@ -195,6 +226,7 @@ class EqualizerProcessor : BaseAudioProcessor() {
 
         val tuning = target
         if (isFlat(tuning) && isSettled(tuning)) {
+            limiter.reset()
             outputBuffer.put(inputBuffer)
             outputBuffer.flip()
             return
@@ -212,12 +244,19 @@ class EqualizerProcessor : BaseAudioProcessor() {
             prepareChannelGains()
 
             repeat(block) {
+                var peak = 0f
                 for (channel in 0 until channelCount) {
                     var sample = inputBuffer.short.toFloat() * invScale
                     for (index in 0 until active) {
                         sample = section(activeSlots[index], channel, sample)
                     }
-                    outputBuffer.putShort(PcmBoundary.clamp16FromFloat(sample * channelGain[channel]))
+                    sample *= channelGain[channel]
+                    frame[channel] = sample
+                    if (abs(sample) > peak) peak = abs(sample)
+                }
+                val gain = limiter.gainFor(peak)
+                for (channel in 0 until channelCount) {
+                    outputBuffer.putShort(PcmBoundary.clamp16FromFloat(frame[channel] * gain))
                 }
             }
             flushDenormals(active)

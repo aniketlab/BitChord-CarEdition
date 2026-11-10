@@ -3,6 +3,7 @@ package com.music.bitchord.playback.audio
 import com.music.bitchord.playback.EqCurve
 import com.music.bitchord.playback.EqLayout
 import com.music.bitchord.playback.EqualizerProcessor
+import com.music.bitchord.playback.PeakLimiter
 import com.music.bitchord.playback.SpatialAudioProcessor
 import com.music.bitchord.playback.TransitionFilterProcessor
 import org.junit.Assert.assertEquals
@@ -366,8 +367,13 @@ class FloatDspChainTest {
         assertTrue("Sub-LSB Float32 signal must survive entire DSP chain", hasNonZero)
     }
 
+    /**
+     * The equaliser hands its overs on rather than clamping them: a stage after
+     * it may turn the signal back down, and an over squared off here would stay
+     * squared off.
+     */
     @Test
-    fun `dsp chain preserves headroom without clipping above 1_0`() {
+    fun `eq stage preserves headroom without clipping above 1_0`() {
         val chain = DspChain()
         chain.configure(sampleRate, 2)
 
@@ -376,7 +382,6 @@ class FloatDspChainTest {
         val gains = FloatArray(EqLayout.SLOTS)
         val qs = FloatArray(EqLayout.SLOTS) { 0.707f }
         chain.equalizer.setTuning(enabled = true, EqCurve(gains, qs, preampDb = 3.0f), balance = 0f)
-        chain.transition.open()
         chain.flush()
 
         val frames = 64
@@ -387,11 +392,82 @@ class FloatDspChainTest {
         }
         block.reset(frames)
 
-        chain.process(block)
+        chain.equalizer.process(block)
 
         // Must NOT be clipped to 1.0f
         val sample = block.samples[frames * 2 - 2]
         assertTrue("Headroom must be preserved above 1.0f (got $sample)", sample > 1.1f)
+    }
+
+    /** ...and the end of the chain catches whatever is still over, with normalization off. */
+    @Test
+    fun `dsp chain limits an equalised over at the end`() {
+        val chain = DspChain()
+        chain.configure(sampleRate, 2)
+
+        chain.spatial.enabled = false
+        val gains = FloatArray(EqLayout.SLOTS)
+        val qs = FloatArray(EqLayout.SLOTS) { 0.707f }
+        chain.equalizer.setTuning(enabled = true, EqCurve(gains, qs, preampDb = 3.0f), balance = 0f)
+        chain.transition.open()
+        chain.flush()
+
+        val frames = 512
+        val block = AudioBlock(channelCount = 2, capacityFrames = frames)
+        for (f in 0 until frames) {
+            val s = 0.9f * sin(2.0 * PI * 100.0 * f / sampleRate).toFloat()
+            block.samples[f * 2] = s
+            block.samples[f * 2 + 1] = s
+        }
+        block.reset(frames)
+
+        chain.process(block)
+
+        var peak = 0f
+        for (i in 0 until frames * 2) peak = maxOf(peak, abs(block.samples[i]))
+        assertTrue("Chain output must stay under the limiter ceiling (got $peak)", peak <= PeakLimiter.CEILING + 1e-5f)
+        assertTrue("The limiter should turn the over down, not mute it (got $peak)", peak > 0.9f)
+    }
+
+    /**
+     * Holding the limiter on for the equaliser must not outlive it: once the
+     * curve has glided flat, the chain has to be bit-exact again, loud source
+     * peaks and all.
+     */
+    @Test
+    fun `dsp chain is bit exact again once the equaliser is switched off`() {
+        val chain = DspChain()
+        chain.configure(sampleRate, 2)
+        chain.spatial.enabled = false
+        chain.transition.open()
+        val gains = FloatArray(EqLayout.SLOTS)
+        val qs = FloatArray(EqLayout.SLOTS) { 0.707f }
+        gains[0] = 6f
+        chain.equalizer.setTuning(enabled = true, EqCurve(gains, qs, preampDb = -3f), balance = 0f)
+        chain.flush()
+
+        val frames = 1024
+        val source = FloatArray(frames * 2)
+        for (f in 0 until frames) {
+            val s = 0.99f * sin(2.0 * PI * 60.0 * f / sampleRate).toFloat()
+            source[f * 2] = s
+            source[f * 2 + 1] = s
+        }
+        val block = AudioBlock(channelCount = 2, capacityFrames = frames)
+        fun pass() {
+            source.copyInto(block.samples)
+            block.reset(frames)
+            chain.process(block)
+        }
+        repeat(10) { pass() }
+        chain.equalizer.setTuning(enabled = false, EqCurve.FLAT, balance = 0f)
+        // Far longer than the EQ glide and the limiter's release together.
+        repeat(80) { pass() }
+
+        pass()
+        for (i in 0 until frames * 2) {
+            assertEquals("sample $i", source[i], block.samples[i], 0f)
+        }
     }
 
     @Test

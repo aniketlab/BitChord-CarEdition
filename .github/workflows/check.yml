@@ -1,0 +1,80 @@
+name: Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Write local.properties
+        run: |
+          echo "LASTFM_API_KEY=${{ secrets.LASTFM_API_KEY }}" > local.properties
+          echo "LASTFM_SECRET=${{ secrets.LASTFM_SECRET }}" >> local.properties
+          echo "LISTEN_TOGETHER_SERVER=${{ secrets.LISTEN_TOGETHER_SERVER }}" >> local.properties
+
+      # The local debug key, so this APK installs over a local dev build and
+      # back. Fork PRs get no secrets; AGP then makes a throwaway key itself.
+      - name: Write the debug keystore
+        env:
+          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          [ -n "$DEBUG_KEYSTORE_BASE64" ] || exit 0
+          mkdir -p ~/.android
+          echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > ~/.android/debug.keystore
+
+      - run: chmod +x gradlew
+
+      - name: Tests
+        run: ./gradlew testDevDebugUnitTest
+
+      - name: Build the dev APK
+        run: ./gradlew assembleDevDebug
+
+      - name: Upload the dev APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: bitchord-dev-debug
+          path: app/build/outputs/apk/dev/debug/*.apk
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-reports
+          path: app/build/reports/tests/
+
+  backend:
+    name: Backend · Go
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - run: go build ./...
+      - run: go vet ./...
+      - run: go test ./...

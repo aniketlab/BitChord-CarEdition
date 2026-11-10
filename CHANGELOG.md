@@ -2,6 +2,22 @@
 
 This port modifies the original BitChord application to make it compatible with Android Car Head Units and Tablets.
 
+## [1.5.4 (Car Edition)] - Synced with Upstream v1.9.1
+
+### Added & Upgraded (Upstream Car-Optimized)
+- **Major UI & Player Lag Fixes**: Stops Home artwork loops while scrolling/covered, optimizes Now Playing sheet redraws (`drawWithContent`), and brings back the stable classic player layout.
+- **Offline Folders & Local Library Overhaul**: Added Folders tab (great for USB drives/SD cards), device playlists, "Open with" audio files, and `libffmpegJNI.so` decoding (ALAC/AC-3/E-AC-3).
+- **Cached Songs Library & Unlimited Cache**: Keep played songs accessible offline while driving.
+- **Content Preferences & Convert to Audio**: Toggle visibility of Home Videos, Top Picks, Recents, and Moods, plus one-tap Convert to Audio mode.
+- **Full Podcast Support, Landscape Lyric Centering & Bounded Queue Startup**: Lighter RAM usage on large playlists and improved 720p landscape readability.
+
+### Car Edition Optimizations & Bloatware Removal
+- **Disabled Heavy Blending & Glass Refraction by Default**: `disableBlendEffects = true`, `glassPerformance = true`, `reduceDynamicBlur = true`, `animatedCanvas = false`, `preferMusicOnly = true`, `hideVolumeBar = true`.
+- **Disabled Wear OS Watch Bundling & Background Service**: Excluded bundled `BitChordWear.apk` from assets and disabled `WearCommandService` + Settings entry.
+- **Disabled Background Presence Telemetry & Seasonal Splash**: Disabled `AndroidPresence` periodic server pings and seasonal Diwali greeting popup.
+- **Disabled Listen Together & In-built Equalizer UI**: Preserved Nakamichi/car hardware DSP integrity and minimized background network/CPU usage.
+- **Fixed OTA Version Parser & Smart ABI Matching**: Strips `(Car Edition)` suffix in `AppUpdateChecker` so updates never self-loop, while matching `armeabi-v7a`, `arm64-v8a`, or `universal` builds accurately.
+
 ## [Car Edition 1.0]
 
 ### Added

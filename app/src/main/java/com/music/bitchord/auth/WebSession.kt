@@ -17,18 +17,6 @@ enum class WebSessionMode {
 }
 
 /**
- * Value accepted by Innertube as `context.user.onBehalfOfUser`.
- * YouTube commonly exposes `DATASYNC_ID` as `account||delegated`; the second
- * half is the active identity, while plain accounts can leave it empty.
- */
-internal fun normalizeDataSyncId(raw: String?): String? {
-    val value = raw?.takeIf { it.isNotBlank() } ?: return null
-    if (!value.contains("||")) return value
-    return value.substringAfter("||").takeIf { it.isNotBlank() }
-        ?: value.substringBefore("||").takeIf { it.isNotBlank() }
-}
-
-/**
  * A session lifted out of the in-app browser: the cookie, plus who the page
  * being looked at says it is.
  *
@@ -126,13 +114,20 @@ object BrowserSession {
                 // Both the host-only and the domain-wide form: a cookie set on
                 // `.google.com` is not removed by expiring it on the host, and
                 // which of the two a given cookie used is not recorded here.
-                manager.setCookie(origin, "$name=; Max-Age=0; Path=/")
-                manager.setCookie(origin, "$name=; Max-Age=0; Path=/; Domain=$host")
-                manager.setCookie(origin, "$name=; Max-Age=0; Path=/; Domain=.$host")
+                val expired = "$name=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0"
+                manager.setCookie(origin, "$expired; Path=/")
+                manager.setCookie(origin, "$expired; Path=/; Domain=$host")
+                manager.setCookie(origin, "$expired; Path=/; Domain=.$host")
+                manager.setCookie(origin, "$expired; Path=/accounts")
+                manager.setCookie(origin, "$expired; Path=/ServiceLogin")
                 cleared++
             }
         }
-        runCatching { manager.flush() }
+        runCatching {
+            val storage = android.webkit.WebStorage.getInstance()
+            GOOGLE_ORIGINS.forEach { origin -> storage.deleteOrigin(origin) }
+            manager.flush()
+        }
         Log.d("BitChord", "cleared $cleared browser cookies for Google")
     }
 

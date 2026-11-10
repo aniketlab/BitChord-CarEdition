@@ -1,6 +1,7 @@
 package com.music.bitchord
 
 import com.music.bitchord.data.innertube.InnertubeParser
+import com.music.bitchord.data.model.ArtistNameIndex
 import com.music.bitchord.data.model.BrowseType
 import com.music.bitchord.data.model.SearchResult
 import com.music.bitchord.data.model.ShelfItem
@@ -156,6 +157,132 @@ class SearchPagingTest {
     }
 
     @Test
+    fun `a byline that links every artist keeps every channel`() {
+        // The whole point: the byline states one endpoint per artist, and
+        // taking only the first is what left every other credit with no page of
+        // its own — so its name had to be searched for, and a search for a name
+        // finds whoever else answers to it.
+        fun artistRun(name: String, id: String) = """
+          { "text": "$name", "navigationEndpoint": { "browseEndpoint": {
+            "browseId": "$id", "browseEndpointContextSupportedConfigs": {
+              "browseEndpointContextMusicConfig": { "pageType": "MUSIC_PAGE_TYPE_ARTIST" }
+            }
+          } } }
+        """.trimIndent()
+        val json = """
+        {
+          "contents": [{ "playlistPanelVideoRenderer": {
+            "videoId": "pull-me-closer",
+            "title": { "runs": [{ "text": "Pull Me Closer" }] },
+            "longBylineText": { "runs": [
+              ${artistRun("BedeoSa", "UC_BEDEO")}, { "text": ", " },
+              ${artistRun("2115", "UC_2115")}, { "text": " & " },
+              ${artistRun("Flexxy", "UC_FLEXXY")}, { "text": " • " },
+              { "text": "Pull Me Closer", "navigationEndpoint": { "browseEndpoint": {
+                "browseId": "MPREb_pull", "browseEndpointContextSupportedConfigs": {
+                  "browseEndpointContextMusicConfig": { "pageType": "MUSIC_PAGE_TYPE_ALBUM" }
+                }
+              } } }
+            ] },
+            "lengthText": { "runs": [{ "text": "3:03" }] },
+            "thumbnail": { "thumbnails": [{ "url": "https://example.test/cover.jpg" }] }
+          } }]
+        }
+        """.trimIndent()
+
+        val song = InnertubeParser.parseWatchQueue(Json.parseToJsonElement(json)).single()
+
+        assertEquals(listOf("BedeoSa", "2115", "Flexxy"), song.artists.map { it.name })
+        assertEquals(
+            listOf("UC_BEDEO", "UC_2115", "UC_FLEXXY"),
+            song.artists.map { it.browseId },
+        )
+        // The first one is still the track's own artist id, which the rest of
+        // the app reads.
+        assertEquals("UC_BEDEO", song.artistId)
+    }
+
+    @Test
+    fun `a partly linked byline keeps the linked artists and no others`() {
+        // Nothing may be completed from what a previous test happened to parse,
+        // or this would be asserting on another test's rows.
+        ArtistNameIndex.forget()
+        fun artistRun(name: String, id: String) = """
+          { "text": "$name", "navigationEndpoint": { "browseEndpoint": {
+            "browseId": "$id", "browseEndpointContextSupportedConfigs": {
+              "browseEndpointContextMusicConfig": { "pageType": "MUSIC_PAGE_TYPE_ARTIST" }
+            }
+          } } }
+        """.trimIndent()
+        val json = """
+        {
+          "contents": [{ "playlistPanelVideoRenderer": {
+            "videoId": "pull-me-closer",
+            "title": { "runs": [{ "text": "Pull Me Closer" }] },
+            "longBylineText": { "runs": [
+              ${artistRun("BedeoSa", "UC_BEDEO")}, { "text": " & " },
+              { "text": "2115" }
+            ] },
+            "lengthText": { "runs": [{ "text": "3:03" }] },
+            "thumbnail": { "thumbnails": [{ "url": "https://example.test/cover.jpg" }] }
+          } }]
+        }
+        """.trimIndent()
+
+        val song = InnertubeParser.parseWatchQueue(Json.parseToJsonElement(json)).single()
+
+        // "2115" is not credited here, because YouTube did not credit it — it
+        // only named it. Inventing a credit for it would put a link on the wrong
+        // row, and a name is not an identity.
+        assertEquals(listOf("BedeoSa"), song.artists.map { it.name })
+        assertEquals("BedeoSa & 2115", song.artist)
+    }
+
+    @Test
+    fun `a name a row named but did not link is filled from what another row linked`() {
+        // The real shape of this bug: one album links two of three names and
+        // another album states the third. The gap is in the response, not in the
+        // artist, so the credit the reader is missing is recovered from the rows
+        // that did link it.
+        ArtistNameIndex.forget()
+        fun artistRun(name: String, id: String) = """
+          { "text": "$name", "navigationEndpoint": { "browseEndpoint": {
+            "browseId": "$id", "browseEndpointContextSupportedConfigs": {
+              "browseEndpointContextMusicConfig": { "pageType": "MUSIC_PAGE_TYPE_ARTIST" }
+            }
+          } } }
+        """.trimIndent()
+
+        fun watchQueue(byline: String) = """
+        {
+          "contents": [{ "playlistPanelVideoRenderer": {
+            "videoId": "pull-me-closer",
+            "title": { "runs": [{ "text": "Pull Me Closer" }] },
+            "longBylineText": { "runs": [$byline] },
+            "lengthText": { "runs": [{ "text": "3:03" }] },
+            "thumbnail": { "thumbnails": [{ "url": "https://example.test/cover.jpg" }] }
+          } }]
+        }
+        """.trimIndent()
+
+        // Another album, where every name is linked.
+        InnertubeParser.parseWatchQueue(
+            Json.parseToJsonElement(
+                watchQueue("${artistRun("CBW", "UC_CBW")}, { \"text\": \", \" }, ${artistRun("White 2115", "UC_WHITE")}"),
+            ),
+        )
+
+        val song = InnertubeParser.parseWatchQueue(
+            Json.parseToJsonElement(
+                watchQueue("${artistRun("CBW", "UC_CBW")}, { \"text\": \", \" }, { \"text\": \"White 2115\" }"),
+            ),
+        ).single()
+
+        assertEquals(listOf("CBW", "White 2115"), song.artists.map { it.name })
+        assertEquals("UC_WHITE", song.artists.first { it.name == "White 2115" }.browseId)
+    }
+
+    @Test
     fun `YouTube explicit badge is carried onto the song`() {
         fun row(id: String, badge: String) = """
           {
@@ -293,6 +420,57 @@ class SearchPagingTest {
         assertEquals("Ed Sheeran", songs.first { it.videoId == "shape" }.artist)
         assertEquals("Pratibimb Productions", songs.first { it.videoId == "cover" }.artist)
         assertNull(songs.first { it.videoId == "cover" }.artistId)
+    }
+
+    /**
+     * Signed out, "tum hi ho" promotes an uncatalogued "Episode" upload over
+     * the song itself. The card goes; the real track below it stays first.
+     */
+    @Test
+    fun `an uncatalogued episode card does not take the top result`() {
+        val json = """
+        {
+          "contents": [
+            {
+              "musicCardShelfRenderer": {
+                "title": { "runs": [{ "text": "Tum Hi Ho" }] },
+                "subtitle": { "runs": [
+                  { "text": "Episode" }, { "text": " • " }, { "text": "Mar 23, 2013" },
+                  { "text": " • " }, { "text": "Arijit Singh" }
+                ] },
+                "onTap": { "browseEndpoint": {
+                  "browseId": "MPEDNUo8CKI34o4",
+                  "browseEndpointContextSupportedConfigs": {
+                    "browseEndpointContextMusicConfig": {
+                      "pageType": "MUSIC_PAGE_TYPE_NON_MUSIC_AUDIO_TRACK_PAGE"
+                    }
+                  }
+                } }
+              }
+            },
+            {
+              "musicResponsiveListItemRenderer": {
+                "playlistItemData": { "videoId": "tumhiho" },
+                "flexColumns": [
+                  { "musicResponsiveListItemFlexColumnRenderer": {
+                    "text": { "runs": [{ "text": "Tum Hi Ho" }] }
+                  } },
+                  { "musicResponsiveListItemFlexColumnRenderer": {
+                    "text": { "runs": [
+                      { "text": "Song" }, { "text": " • " }, { "text": "Arijit Singh" }
+                    ] }
+                  } }
+                ]
+              }
+            }
+          ]
+        }
+        """.trimIndent()
+
+        val page = InnertubeParser.parseSearchPage(Json.parseToJsonElement(json).jsonObject)
+
+        assertTrue(page.rows.none { it is SearchResult.Browse })
+        assertEquals("tumhiho", (page.rows.first() as SearchResult.Track).song.videoId)
     }
 
     @Test

@@ -5,6 +5,7 @@ import androidx.media3.common.audio.AudioProcessor
 import com.music.bitchord.playback.EqLayout
 import com.music.bitchord.playback.EqualizerPreset
 import com.music.bitchord.playback.EqualizerProcessor
+import com.music.bitchord.playback.PeakLimiter
 import com.music.bitchord.playback.manualCurve
 import com.music.bitchord.playback.toneCurve
 import java.nio.ByteBuffer
@@ -133,9 +134,10 @@ class EqualizerProcessorTest {
     }
 
     /**
-     * The make-up attenuation exists so that boosting cannot run the signal into
-     * the top of a 16-bit sample. Every band up as far as it goes is the worst
-     * case there is.
+     * The make-up only takes back half of a boost, so every band up as far as
+     * it goes on a loud tone runs well past the top of a 16-bit sample. The
+     * limiter has to hold it under its ceiling rather than leave the clamp to
+     * square it off.
      */
     @Test
     fun `boosting every band at once does not clip`() {
@@ -146,7 +148,16 @@ class EqualizerProcessorTest {
         val input = stereoTone(400.0, amplitude = 24_000.0)
         val output = run(processor, input)
         val peak = output.maxOf { abs(it.toInt()) }
-        assertTrue("output peaked at $peak, above what went in", peak <= 24_200)
+        val ceiling = PeakLimiter.CEILING * 32_768
+        assertTrue("output peaked at $peak, past the limiter's $ceiling", peak <= ceiling + 1)
+    }
+
+    /** Half the peak boost, not all of it: a lone +12 dB band costs the rest of the mix 6 dB. */
+    @Test
+    fun `the make-up takes back half of the boost`() {
+        val bands = MutableList(EqLayout.MANUAL_COUNT) { 0f }
+        bands[3] = EqLayout.MANUAL_RANGE_DB
+        assertEquals(-EqLayout.MANUAL_RANGE_DB / 2, manualCurve(bands).preampDb, 0.1f)
     }
 
     @Test

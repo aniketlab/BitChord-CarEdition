@@ -23,12 +23,15 @@ import androidx.media3.common.Timeline
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionToken
+import com.music.bitchord.data.model.ArtistRef
 import com.music.bitchord.data.model.NOTIFICATION_ART_PX
 import com.music.bitchord.data.model.PlaybackSourceType
 import com.music.bitchord.data.model.QueueTier
 import com.music.bitchord.data.model.Song
 import com.music.bitchord.data.model.artworkAt
+import com.music.bitchord.data.sources.SourceKind
 import com.music.bitchord.data.sources.SourceRegistry
+import com.music.bitchord.data.sources.SourceResolver
 import com.music.bitchord.data.sources.TrackMatcher
 import com.music.bitchord.download.Downloads
 import com.music.bitchord.ui.rememberIsForeground
@@ -38,28 +41,6 @@ import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Locale
-
-/**
- * The playhead, deliberately kept out of [PlayerState].
- *
- * It moves twice a second; everything else on [PlayerState] moves on a track
- * change. Carried in the same object, the two are one snapshot read — and
- * [rememberPlayerState] returns a value, which makes it non-restartable, which
- * pushes that read up into its *caller's* scope. In this app the caller is the
- * root of the whole UI, so a ticking playhead invalidated the entire tree twice
- * a second: every tab, both floating bars, and the three real-time blurs
- * underneath them, whether or not anything on screen showed a position.
- *
- * Split out and held behind a stable object, the tick is a read of this alone.
- * Whoever draws a scrubber reads it and recomposes; nobody else hears about it.
- * Take care to keep it that way — reading [positionMs] high in the tree and
- * passing the `Long` down puts the invalidation straight back where it was.
- */
-@Stable
-class PlaybackPosition internal constructor() {
-    var positionMs by mutableLongStateOf(0L)
-        internal set
-}
 
 /** Snapshot of playback state, driven by the MediaController. */
 data class PlayerState(
@@ -133,6 +114,36 @@ fun MediaController.toggleShuffle() {
     )
 }
 
+/** Starts an album/playlist through the service-owned bounded context window. */
+suspend fun MediaController.playBoundedContext(
+    songs: List<Song>,
+    startIndex: Int,
+    source: QueueSource,
+    continuationToken: String?,
+    shuffle: Boolean = QueueShuffle.enabled.value,
+) {
+    val token = BoundedContextRequests.put(
+        BoundedContextRequests.Request(
+            songs = songs,
+            startIndex = startIndex,
+            source = source,
+            continuationToken = continuationToken,
+            shuffle = shuffle,
+        ),
+    )
+    try {
+        sendCustomCommand(
+            SessionCommand(ACTION_START_BOUNDED_CONTEXT, Bundle.EMPTY),
+            // Keep the existing key until the service-side command rename. The
+            // value is now a process-local request token, never a Song list.
+            bundleOf(EXTRA_BOUNDED_CONTEXT_SONGS to token),
+        ).await()
+    } catch (error: Throwable) {
+        BoundedContextRequests.discard(token)
+        throw error
+    }
+}
+
 /** Clears the previous queue's service and restart state before starting radio. */
 suspend fun MediaController.beginRadioQueue() {
     sendCustomCommand(
@@ -177,6 +188,31 @@ fun MediaController.swapToVersion(targetSong: Song) {
     )
 }
 
+/**
+ * The credited artists, read back out of the two parallel lists they travel in.
+ *
+ * A `Song` is a data class and a `MediaItem`'s extras are a `Bundle`, which
+ * holds scalars and collections of them — so the credits cross as their names
+ * and their ids side by side rather than as the list itself. A blank id is a
+ * name YouTube stated without a channel behind it, which is kept so the credit
+ * still reads; it simply has no page to open.
+ *
+ * Shorter of the two lists wins, and they are written together, so a bundle
+ * that has been through something which dropped one of them yields what is left
+ * rather than a list of names with no ids or ids with no names.
+ */
+private fun Bundle.artistsFromBundle(): List<ArtistRef> {
+    val names = getStringArrayList(ARTISTS_NAMES).orEmpty()
+    val ids = getStringArrayList(ARTISTS_IDS).orEmpty()
+    if (names.isEmpty() || ids.isEmpty()) return emptyList()
+    return names.indices.map { index ->
+        ArtistRef(name = names[index], browseId = ids.getOrNull(index)?.ifBlank { null })
+    }
+}
+
+private const val ARTISTS_NAMES = "artistNames"
+private const val ARTISTS_IDS = "artistIds"
+
 fun Song.toSongBundle(): Bundle = bundleOf(
     "videoId" to videoId,
     "title" to title,
@@ -199,31 +235,45 @@ fun Song.toSongBundle(): Bundle = bundleOf(
     "playbackSourceType" to playbackSourceType?.name,
     "playbackSourceId" to playbackSourceId,
     "isExplicit" to (isExplicit ?: false),
-)
+    "queueTier" to queueTier.name,
+    "queueEntryId" to queueEntryId,
+    // `bundleOf` has no overload for a list of strings, so the two halves of
+    // the credits go in afterwards.
+).apply {
+    putStringArrayList(ARTISTS_NAMES, ArrayList(artists.map { it.name }))
+    putStringArrayList(ARTISTS_IDS, ArrayList(artists.map { it.browseId.orEmpty() }))
+}
 
-fun songFromBundle(b: Bundle): Song = Song(
-    videoId = b.getString("videoId").orEmpty(),
-    title = b.getString("title").orEmpty(),
-    artist = b.getString("artist").orEmpty(),
-    thumbnailUrl = b.getString("thumbnailUrl"),
-    durationText = b.getString("durationText"),
-    artistId = b.getString("artistId"),
-    albumId = b.getString("albumId"),
-    albumName = b.getString("albumName"),
-    isVideo = b.getBoolean("isVideo"),
-    isVideoOrigin = b.getBoolean("isVideoOrigin"),
-    setVideoId = b.getString("setVideoId"),
-    fromAutoplay = b.getBoolean("fromAutoplay"),
-    radioName = b.getString("radioName"),
-    localUri = b.getString("localUri"),
-    downloadFormat = b.getString("downloadFormat"),
-    localPath = b.getString("localPath"),
-    sourceQuality = b.getString("sourceQuality"),
-    playbackSource = b.getString("playbackSource"),
-    playbackSourceType = b.getString("playbackSourceType")?.let { runCatching { com.music.bitchord.data.model.PlaybackSourceType.valueOf(it) }.getOrNull() },
-    playbackSourceId = b.getString("playbackSourceId"),
-    isExplicit = if (b.containsKey("isExplicit")) b.getBoolean("isExplicit") else null,
-)
+fun songFromBundle(b: Bundle): Song {
+    val queueTier = b.getString("queueTier")?.let {
+        runCatching { QueueTier.valueOf(it) }.getOrNull()
+    } ?: if (b.getBoolean("fromAutoplay")) QueueTier.AUTOPLAY else QueueTier.CONTEXT
+    return Song(
+        videoId = b.getString("videoId").orEmpty(),
+        title = b.getString("title").orEmpty(),
+        artist = b.getString("artist").orEmpty(),
+        thumbnailUrl = b.getString("thumbnailUrl"),
+        durationText = b.getString("durationText"),
+        artistId = b.getString("artistId"),
+        artists = b.artistsFromBundle(),
+        albumId = b.getString("albumId"),
+        albumName = b.getString("albumName"),
+        isVideo = b.getBoolean("isVideo"),
+        isVideoOrigin = b.getBoolean("isVideoOrigin"),
+        setVideoId = b.getString("setVideoId"),
+        radioName = b.getString("radioName"),
+        localUri = b.getString("localUri"),
+        downloadFormat = b.getString("downloadFormat"),
+        localPath = b.getString("localPath"),
+        sourceQuality = b.getString("sourceQuality"),
+        playbackSource = b.getString("playbackSource"),
+        playbackSourceType = b.getString("playbackSourceType")?.let { runCatching { com.music.bitchord.data.model.PlaybackSourceType.valueOf(it) }.getOrNull() },
+        playbackSourceId = b.getString("playbackSourceId"),
+        isExplicit = if (b.containsKey("isExplicit")) b.getBoolean("isExplicit") else null,
+        queueTier = queueTier,
+        queueEntryId = b.getString("queueEntryId"),
+    )
+}
 
 /** Flushes the current radio queue to disk before reporting that it started. */
 suspend fun MediaController.commitRadioQueue() {
@@ -292,7 +342,7 @@ fun rememberPlayerState(controller: MediaController?): PlayerState {
             }
             // Synced here too, so seeking while paused or buffering still moves
             // the scrubber (the poll loop only runs on play).
-            position.positionMs = player.currentPosition.coerceAtLeast(0L)
+            position.report(player.currentPosition.coerceAtLeast(0L))
             state = state.copy(
                 song = item?.toSong(),
                 isPlaying = player.isPlaying,
@@ -318,7 +368,37 @@ fun rememberPlayerState(controller: MediaController?): PlayerState {
                     timeline.windowCount != queueSnapshot.size
                 ) {
                     queueChanged = true
+                } else if (timeline.windowCount > 0 && queueSnapshot.isNotEmpty()) {
+                    val window = Timeline.Window()
+                    for (i in 0 until timeline.windowCount) {
+                        timeline.getWindow(i, window)
+                        val item = window.mediaItem
+                        val entryId = item.mediaMetadata.extras?.getString(EXTRA_QUEUE_ENTRY_ID)
+                            ?: mediaItemEntryIds[item]
+                        if (item.mediaId != queueSnapshot[i].videoId ||
+                            (entryId != null && entryId != queueSnapshot[i].queueEntryId)
+                        ) {
+                            queueChanged = true
+                            break
+                        }
+                    }
                 }
+            }
+            // Every jump the player makes — a seek, a skip, a repeat starting
+            // over, a stretch of silence skipped — is announced here, ahead of
+            // the `onEvents` that reports where it landed. It is the only thing
+            // the lyrics accept as a reason to go backwards; see PlaybackPosition.
+            override fun onPositionDiscontinuity(
+                oldPosition: Player.PositionInfo,
+                newPosition: Player.PositionInfo,
+                reason: Int,
+            ) {
+                // Except a loop mix re-anchoring the playhead through its tempo
+                // ramp: reported moving forward, and only a reading to correct
+                // towards, not a jump. Its loop wraps go backwards and count.
+                val reanchor = reason == Player.DISCONTINUITY_REASON_INTERNAL &&
+                    newPosition.positionMs > oldPosition.positionMs
+                if (!reanchor) position.seeks++
             }
             override fun onEvents(p: Player, events: Player.Events) = sync(
                 error = state.error,
@@ -343,7 +423,7 @@ fun rememberPlayerState(controller: MediaController?): PlayerState {
     val foreground = rememberIsForeground()
     LaunchedEffect(controller, state.isPlaying, foreground) {
         while (controller != null && state.isPlaying && foreground) {
-            position.positionMs = controller.currentPosition.coerceAtLeast(0L)
+            position.report(controller.currentPosition.coerceAtLeast(0L))
             val duration = controller.duration.coerceAtLeast(0L)
             if (duration != state.durationMs) state = state.copy(durationMs = duration)
             delay(500)
@@ -366,6 +446,7 @@ fun MediaItem.toSong() = Song(
     thumbnailUrl = mediaMetadata.artworkUri?.toString(),
     durationText = mediaMetadata.extras?.getString(EXTRA_DURATION),
     artistId = mediaMetadata.extras?.getString(EXTRA_ARTIST_ID),
+    artists = mediaMetadata.extras?.artistsFromBundle() ?: emptyList(),
     albumId = mediaMetadata.extras?.getString(EXTRA_ALBUM_ID),
     albumName = mediaMetadata.albumTitle?.toString(),
     isExplicit = mediaMetadata.extras?.takeIf { it.containsKey(EXTRA_EXPLICIT) }
@@ -374,6 +455,8 @@ fun MediaItem.toSong() = Song(
     isVideoOrigin = mediaMetadata.extras?.getBoolean(EXTRA_VIDEO_ORIGIN) == true ||
         mediaMetadata.extras?.getBoolean(EXTRA_IS_VIDEO) == true,
     setVideoId = mediaMetadata.extras?.getString(EXTRA_SET_VIDEO_ID),
+    sourceQuality = mediaMetadata.extras?.getString(EXTRA_SOURCE_QUALITY),
+    sourceHiRes = mediaMetadata.extras?.getBoolean(EXTRA_SOURCE_HI_RES) == true,
     queueTier = this.queueTier,
     queueEntryId = this.queueEntryId,
     radioName = mediaMetadata.extras?.getString(EXTRA_RADIO_NAME),
@@ -385,6 +468,10 @@ fun MediaItem.toSong() = Song(
     localPath = mediaMetadata.extras?.getString(EXTRA_LOCAL_PATH),
 )
 
+internal val mediaItemTiers = java.util.Collections.synchronizedMap(java.util.WeakHashMap<MediaItem, QueueTier>())
+internal val mediaItemEntryIds = java.util.Collections.synchronizedMap(java.util.WeakHashMap<MediaItem, String>())
+internal val mediaItemCanonicalIndices = java.util.Collections.synchronizedMap(java.util.WeakHashMap<MediaItem, Int>())
+
 /** @see Song.fromAutoplay */
 val MediaItem.fromAutoplay: Boolean
     get() = queueTier == QueueTier.AUTOPLAY
@@ -392,25 +479,38 @@ val MediaItem.fromAutoplay: Boolean
 /** @see Song.queueTier */
 val MediaItem.queueTier: QueueTier
     get() {
-        return when (mediaMetadata.extras?.getString(EXTRA_QUEUE_TIER)) {
+        val tierFromExtras = when (mediaMetadata.extras?.getString(EXTRA_QUEUE_TIER)) {
             "USER_QUEUE" -> QueueTier.USER_QUEUE
             "CONTEXT" -> QueueTier.CONTEXT
             "AUTOPLAY" -> QueueTier.AUTOPLAY
             else -> if (mediaMetadata.extras?.getBoolean(EXTRA_FROM_AUTOPLAY) == true) {
                 QueueTier.AUTOPLAY
             } else {
-                QueueTier.CONTEXT
+                null
             }
         }
+        return tierFromExtras ?: mediaItemTiers[this] ?: QueueTier.CONTEXT
     }
 
 /** @see Song.queueEntryId */
 val MediaItem.queueEntryId: String?
-    get() = mediaMetadata.extras?.getString(EXTRA_QUEUE_ENTRY_ID)
+    get() = mediaMetadata.extras?.getString(EXTRA_QUEUE_ENTRY_ID) ?: mediaItemEntryIds[this]
 
 /** Public metadata keys for queue categorization and immutable queue entry identity. */
 const val EXTRA_QUEUE_TIER = "bitchord.queueTier"
 const val EXTRA_QUEUE_ENTRY_ID = "bitchord.queueEntryId"
+const val EXTRA_CANONICAL_INDEX = "bitchord.canonicalIndex"
+
+/** Provenance index within the canonical collection (0-based). */
+val MediaItem.canonicalIndex: Int?
+    get() {
+        val extras = mediaMetadata.extras
+        if (extras != null && extras.containsKey(EXTRA_CANONICAL_INDEX)) {
+            val idx = extras.getInt(EXTRA_CANONICAL_INDEX, -1)
+            if (idx >= 0) return idx
+        }
+        return mediaItemCanonicalIndices[this]
+    }
 
 /**
  * Marks a queue entry as AutoPlay's rather than the user's. Carried on the
@@ -459,6 +559,14 @@ internal const val EXTRA_LOCAL_PATH = "bitchord.localPath"
  */
 private const val EXTRA_DURATION = "bitchord.durationText"
 private const val EXTRA_EXPLICIT = "bitchord.explicit"
+
+/**
+ * @see Song.sourceQuality — carried so an addon row rebuilt from the queue
+ * (a restore, a reorder) keeps the `&mix=` its first item had; see
+ * [SourceResolver.MIX_PARAM].
+ */
+private const val EXTRA_SOURCE_QUALITY = "bitchord.sourceQuality"
+private const val EXTRA_SOURCE_HI_RES = "bitchord.sourceHiRes"
 private const val EXTRA_IS_VIDEO = "bitchord.isVideo"
 private const val EXTRA_VIDEO_ORIGIN = "bitchord.isVideoOrigin"
 
@@ -469,24 +577,6 @@ const val EXTRA_QUALITY_UPGRADED = "bitchord.qualityUpgraded"
 val MediaItem.isVideoOrigin: Boolean
     get() = mediaMetadata.extras?.getBoolean(EXTRA_VIDEO_ORIGIN) == true ||
         mediaMetadata.extras?.getBoolean(EXTRA_IS_VIDEO) == true
-
-/**
- * Where AutoPlay's section of the queue begins, and so where a track queued by
- * hand belongs — above the mix, below everything the user picked.
- *
- * Read as "the first of AutoPlay's tracks still to come", which is what keeps
- * it below the playing track even when the mix itself is what's playing: the
- * tracks of it already behind you count as played, and the section starts
- * again below the needle. Tracks put in by hand there — "Play next" while the
- * mix runs — stay above it too, for the same reason.
- *
- * The queue panel draws its AutoPlay heading at this same index.
- */
-fun autoplaySectionStart(fromAutoplay: List<Boolean>, currentIndex: Int): Int {
-    val after = (currentIndex + 1).coerceIn(0, fromAutoplay.size)
-    return (after until fromAutoplay.size).firstOrNull { fromAutoplay[it] }
-        ?: fromAutoplay.size
-}
 
 fun MediaController.autoplaySectionStart(): Int = autoplaySectionStart(
     fromAutoplay = (0 until mediaItemCount).map { getMediaItemAt(it).fromAutoplay },
@@ -509,6 +599,10 @@ fun MediaController.autoplaySectionStart(): Int = autoplaySectionStart(
 private val DIRECT_FILE_URI_EXTENSIONS = setOf(
     "m4a", "m4b", "m4p", "mp4", "aac", "3ga", "3gp", "3gpp",
     "alac", "amr", "awb", "wma", "aif", "aiff", "ac3", "dts",
+    // DSF keeps its tags at the end, so the extractor reads the tail first and
+    // seeks back to the audio; DFF walks every chunk to the end before it
+    // starts, and seeks back the same way.
+    "dsf", "dff",
 )
 
 private fun resolvePlaybackUri(uriString: String, localPath: String?): String {
@@ -538,6 +632,16 @@ private fun Song.matchQuery(): String = buildString {
     // track keeps [isVideoOrigin] for AutoMix, but is intentionally audio here
     // so the normal source-quality upgrade path can improve it.
     if (isVideo) append("&m=1")
+}
+
+/**
+ * `&mix=` on every addon row, naming the mix its search answer said it is, so
+ * its play asks for that row and nothing else — see [SourceResolver.MIX_PARAM].
+ * Empty for every other source.
+ */
+private fun Song.pickedMixQuery(configId: String): String {
+    if (SourceRegistry.config(configId)?.kind != SourceKind.ADDON) return ""
+    return "&${SourceResolver.MIX_PARAM}=${SourceResolver.mixOf(sourceQuality)}"
 }
 
 fun Song.toMediaItem(): MediaItem {
@@ -577,7 +681,7 @@ fun Song.toMediaItem(): MediaItem {
         // current item, so reaching back for the session's metadata isn't an
         // option either.
         sourceTrack != null -> SourceRegistry.trackUri(sourceTrack.first, sourceTrack.second)
-            .let { "$it${matchQuery()}" }
+            .let { "$it${matchQuery()}${pickedMixQuery(sourceTrack.first)}" }
         // A track the listener reverted by hand stays reverted — see
         // [OriginalVersion]. Applied here rather than at the one menu that
         // reverts, because "stays" has to mean the next queue entry built for
@@ -639,6 +743,7 @@ fun Song.toMediaItem(): MediaItem {
                     offlineUri != null || durationText != null ||
                     artistId != null || albumId != null || setVideoId != null ||
                     isExplicit != null || isVideo || isVideoOrigin || radioName != null ||
+                    sourceQuality != null ||
                     playbackSource != null || playbackSourceType != null || playbackSourceId != null
                 ) {
                     setExtras(
@@ -659,6 +764,8 @@ fun Song.toMediaItem(): MediaItem {
                             EXTRA_EXPLICIT to isExplicit,
                             EXTRA_IS_VIDEO to isVideo,
                             EXTRA_VIDEO_ORIGIN to isVideoOrigin,
+                            EXTRA_SOURCE_QUALITY to sourceQuality,
+                            EXTRA_SOURCE_HI_RES to sourceHiRes,
                         ),
                     )
                 }
@@ -666,6 +773,10 @@ fun Song.toMediaItem(): MediaItem {
             .build(),
     )
     .build()
+    .also { item ->
+        queueEntryId?.let { mediaItemEntryIds[item] = it }
+        mediaItemTiers[item] = queueTier
+    }
 }
 
 /**
@@ -756,17 +867,40 @@ fun mediaIdIn(uri: Uri): String? = if (uri.authority == "source") {
  */
 suspend fun MediaController.playSongs(songs: List<Song>, startIndex: Int) {
     if (songs.isEmpty()) return
+    sendCustomCommand(
+        SessionCommand(ACTION_CLEAR_BOUNDED_CONTEXT, Bundle.EMPTY),
+        Bundle.EMPTY,
+    ).await()
     // A queue started while shuffle is on goes in shuffled rather than being
     // played out of order — see [QueueShuffle]. The track the user picked still
     // leads, so it ends up at the top instead of at [startIndex].
     val shuffled = QueueShuffle.enabled.value
     val items = withContext(Dispatchers.Default) {
-        val queue = if (shuffled) {
-            QueueShuffle.startingOrder(songs, startIndex.coerceIn(songs.indices))
-        } else {
-            songs
+        val songsWithIds = songs.map { song ->
+            if (song.queueEntryId == null) song.copy(queueEntryId = java.util.UUID.randomUUID().toString()) else song
         }
-        queue.map { it.toMediaItem() }
+        val contextEntries = songsWithIds.filter { it.queueTier == QueueTier.CONTEXT }
+        val canonicalIndexMap = contextEntries.mapIndexed { idx, s -> s.queueEntryId!! to idx }.toMap()
+
+        val queue = if (shuffled) {
+            QueueShuffle.startingOrder(songsWithIds, startIndex.coerceIn(songsWithIds.indices))
+        } else {
+            songsWithIds
+        }
+        val mediaItems = queue.map { song ->
+            val item = song.toMediaItem()
+            val cIndex = if (song.queueTier == QueueTier.CONTEXT) {
+                canonicalIndexMap[song.queueEntryId]
+            } else null
+            if (cIndex != null) QueueShuffle.withQueueMetadata(item, newCanonicalIndex = cIndex) else item
+        }
+
+        val canonicalMediaItems = contextEntries.mapIndexed { idx, s ->
+            QueueShuffle.withQueueMetadata(s.toMediaItem(), newCanonicalIndex = idx)
+        }
+        QueueShuffle.setCanonicalContext(canonicalMediaItems)
+
+        mediaItems
     }
     setMediaItems(items, queueStartIndex(startIndex, items.size, shuffled), 0L)
     prepare()

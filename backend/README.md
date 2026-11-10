@@ -126,6 +126,11 @@ Pass the party token in `Authorization: Bearer <token>` during the WebSocket
 handshake. Tokens are intentionally not accepted in the URL, which prevents
 them from being recorded in common HTTP access logs.
 
+A browser cannot set that header on a WebSocket, so the web player offers the
+token as a subprotocol instead: `Sec-WebSocket-Protocol: bitchord.v1,
+bitchord.token.<token>`. The server answers `bitchord.v1` and never echoes the
+token. The browser's `Origin` must be in `JAM_ALLOWED_ORIGINS`.
+
 Client → server:
 
 ```jsonc
@@ -230,6 +235,14 @@ To keep memory, bandwidth, and latency strictly bounded:
   alongside indices. If concurrent network lag (e.g. 800 ms mobile latency) or
   a track completion shifts indices, the server resolves `fromIndex` from the
   track's `videoId` under the party lock, preventing misplaced drops.
+- **Repeated tracks**: the queue keeps its history, so it can hold the playing
+  track twice. `setQueue` keeps the sender's `queueIndex` when it names the
+  playing track, and `setTrack` without one takes the copy nearest the current
+  index (the next slot first) rather than the first copy from the top.
+- **AutoPlay de-duplication**: `queueAdd` drops `fromAutoplay` tracks already
+  waiting after the current one (or repeated in the batch). A batch that is
+  entirely such tracks succeeds without changing the queue. Hand-queued tracks
+  are never filtered.
 
 ## Deploying to Oracle Cloud (Always Free)
 
@@ -324,6 +337,7 @@ Every one of these is optional — `config/config.go` carries the same defaults.
 | `JAM_CONNECTION_IDLE_MS` | `900000` | Close a WebSocket that sends no message for 15 minutes. |
 | `JAM_ALLOWED_ORIGINS` | *(none)* | Comma-separated browser Origin allowlist. Native clients send no Origin and remain supported. |
 | `JAM_TRUST_PROXY` | `false` | Read `X-Forwarded-For` for rate limiting only when a trusted proxy terminates requests. |
+| `JAM_PUBLIC_ORIGIN` | *(none)* | Public origin emitted verbatim in invite deep links, e.g. `https://party.example.com`. Set it when TLS terminates upstream and `X-Forwarded-Proto` may be rewritten or dropped along the way. |
 | `PORT` | `8000` | Port the server listens on. |
 
 ## Layout

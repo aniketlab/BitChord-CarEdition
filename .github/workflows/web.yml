@@ -1,0 +1,57 @@
+name: Web
+
+# The web player (web/app), its browser extension (web/extension) and the code
+# they share (web/shared): typecheck, test and build all three, so a change
+# that only breaks the production build (Vite, WXT) is caught before it ships.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/web.yml'
+  pull_request:
+    paths:
+      - 'web/**'
+      - '.github/workflows/web.yml'
+
+concurrency:
+  group: web-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web · typecheck, test, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      # The pnpm version comes from web/package.json's packageManager.
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      # The app's build runs tsc then vite; the extension's builds Chrome and Firefox.
+      # The real party server is a Cloudflare Pages variable; this build is
+      # never deployed, it only needs a value to get past vite.config.ts.
+      - name: Build
+        run: pnpm build
+        env:
+          VITE_PARTY_SERVER_URL: https://party.example.com

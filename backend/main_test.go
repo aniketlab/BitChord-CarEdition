@@ -13,10 +13,15 @@ import (
 
 	"github.com/gorilla/websocket"
 
+	"github.com/KabirSinghBhatia/BitChord/backend/clock"
+	"github.com/KabirSinghBhatia/BitChord/backend/config"
+	"github.com/KabirSinghBhatia/BitChord/backend/presence"
 	"github.com/KabirSinghBhatia/BitChord/backend/protocol"
 )
 
 func setupTestServer() *httptest.Server {
+	// Each test server starts with its own party-creation allowance.
+	createLimiter = newIPRateLimiter(time.Minute, config.CreateRatePerMinute, config.RateLimitMaxEntries)
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", handleRoot)
 	mux.HandleFunc("GET /healthz", handleHealthz)
@@ -25,6 +30,9 @@ func setupTestServer() *httptest.Server {
 	mux.HandleFunc("POST /api/parties/{code}/join", handleJoinParty)
 	mux.HandleFunc("GET /api/parties/{code}", handleGetParty)
 	mux.HandleFunc("POST /api/parties/{code}/leave", handleLeaveParty)
+	mux.HandleFunc("POST /api/presence", handlePresence)
+	mux.HandleFunc("GET /api/stats/live", handleLiveStats)
+	mux.HandleFunc("GET /api/stats/live/badge.svg", handleLiveBadge)
 	mux.HandleFunc("GET /invite/{code}", handleInviteLanding)
 	mux.HandleFunc("GET /ws/parties/{code}", handleWebSocket)
 
@@ -236,6 +244,234 @@ func TestCreateRateLimiter(t *testing.T) {
 	}
 }
 
+func TestRateLimiterFreesExpiredEntriesWhenFull(t *testing.T) {
+	limiter := newIPRateLimiter(time.Minute, 5, 1)
+	if !limiter.Allow("203.0.113.20") {
+		t.Fatal("expected the first IP to fit")
+	}
+	if limiter.Allow("203.0.113.21") {
+		t.Fatal("expected a second IP to be refused while the table is full")
+	}
+	// Age the only entry past the window; a full table must sweep it to make room.
+	entry := limiter.entries["203.0.113.20"]
+	entry.started = entry.started.Add(-2 * time.Minute)
+	limiter.entries["203.0.113.20"] = entry
+	if !limiter.Allow("203.0.113.21") {
+		t.Fatal("expected the expired entry to be swept for the new IP")
+	}
+}
+
+func postPresence(t *testing.T, ts *httptest.Server, body string, origin string) *http.Response {
+	t.Helper()
+	req, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/presence", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	if origin != "" {
+		req.Header.Set("Origin", origin)
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("POST /api/presence failed: %v", err)
+	}
+	return res
+}
+
+func liveStats(t *testing.T, ts *httptest.Server) presence.Counts {
+	t.Helper()
+	res, err := http.Get(ts.URL + "/api/stats/live")
+	if err != nil || res.StatusCode != http.StatusOK {
+		t.Fatalf("GET /api/stats/live failed: status %v, err %v", res.StatusCode, err)
+	}
+	if got := res.Header.Get("Access-Control-Allow-Origin"); got != "*" {
+		t.Fatalf("stats must be readable from any site, got Access-Control-Allow-Origin %q", got)
+	}
+	var counts presence.Counts
+	if err := json.NewDecoder(res.Body).Decode(&counts); err != nil {
+		t.Fatalf("decode stats: %v", err)
+	}
+	return counts
+}
+
+func TestPresence(t *testing.T) {
+	presenceTracker = presence.NewTracker(6*time.Minute, 1000)
+	presenceLimiter = newIPRateLimiter(time.Minute, 100, 100)
+	ts := setupTestServer()
+	defer ts.Close()
+
+	const phone = "3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b"
+	const pc = "7c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f"
+
+	res := postPresence(t, ts, `{"id":"`+phone+`","platform":"android","open":true}`, "")
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("android ping: status %d", res.StatusCode)
+	}
+	var reply map[string]int
+	_ = json.NewDecoder(res.Body).Decode(&reply)
+	if reply["intervalSec"] != config.PresenceIntervalSec {
+		t.Fatalf("expected intervalSec %d, got %v", config.PresenceIntervalSec, reply)
+	}
+	postPresence(t, ts, `{"id":"`+pc+`","platform":"pc","open":true}`, "")
+	// The same install pinging again is still one install.
+	postPresence(t, ts, `{"id":"`+phone+`","platform":"android","open":true}`, "")
+
+	presenceTracker.Sweep(clock.NowMs())
+	if got := liveStats(t, ts); got.Online != 2 || got.Android != 1 || got.PC != 1 {
+		t.Fatalf("got %+v, want 2 online (1 android, 1 pc)", got)
+	}
+
+	postPresence(t, ts, `{"id":"`+pc+`","platform":"pc","open":false}`, "")
+	presenceTracker.Sweep(clock.NowMs())
+	if got := liveStats(t, ts); got.Online != 1 || got.PC != 0 {
+		t.Fatalf("got %+v, want the closed pc gone", got)
+	}
+
+	// The web player counts as its own platform, from its allowed origin only.
+	const web = "5a6b7c8d-1e2f-4a3b-9c4d-0e1f2a3b4c5d"
+	const webOrigin = "https://web.example.test"
+	prev := config.AllowedOrigins
+	config.AllowedOrigins = []string{webOrigin}
+	defer func() { config.AllowedOrigins = prev }()
+	webPing := `{"id":"` + web + `","platform":"browser","open":true}`
+	if res := postPresence(t, ts, webPing, webOrigin); res.StatusCode != http.StatusOK {
+		t.Fatalf("browser ping: status %d", res.StatusCode)
+	}
+	presenceTracker.Sweep(clock.NowMs())
+	if got := liveStats(t, ts); got.Online != 2 || got.Android != 1 || got.Browser != 1 {
+		t.Fatalf("got %+v, want 2 online (1 android, 1 browser)", got)
+	}
+	for name, origin := range map[string]string{"no origin": "", "other origin": "https://example.com"} {
+		if res := postPresence(t, ts, webPing, origin); res.StatusCode != http.StatusForbidden {
+			t.Errorf("browser ping with %s: status %d, want 403", name, res.StatusCode)
+		}
+	}
+	if res := postPresence(t, ts, `{"id":"`+pc+`","platform":"pc","open":true}`, webOrigin); res.StatusCode != http.StatusForbidden {
+		t.Errorf("native platform from the web origin: status %d, want 403", res.StatusCode)
+	}
+	postPresence(t, ts, `{"id":"`+web+`","platform":"browser","open":false}`, webOrigin)
+	presenceTracker.Sweep(clock.NowMs())
+	if got := liveStats(t, ts); got.Online != 1 || got.Browser != 0 {
+		t.Fatalf("got %+v, want the closed browser gone", got)
+	}
+
+	rejected := []struct {
+		name   string
+		body   string
+		origin string
+		status int
+	}{
+		{"unknown platform", `{"id":"` + pc + `","platform":"ios","open":true}`, "", http.StatusUnprocessableEntity},
+		{"desktop is not a platform name", `{"id":"` + pc + `","platform":"desktop","open":true}`, "", http.StatusUnprocessableEntity},
+		{"bad id", `{"id":"abc","platform":"pc","open":true}`, "", http.StatusUnprocessableEntity},
+		{"missing open", `{"id":"` + pc + `","platform":"pc"}`, "", http.StatusUnprocessableEntity},
+		{"from a browser", `{"id":"` + pc + `","platform":"pc","open":true}`, "https://example.com", http.StatusForbidden},
+	}
+	for _, c := range rejected {
+		if res := postPresence(t, ts, c.body, c.origin); res.StatusCode != c.status {
+			t.Errorf("%s: status %d, want %d", c.name, res.StatusCode, c.status)
+		}
+	}
+	presenceTracker.Sweep(clock.NowMs())
+	if got := liveStats(t, ts); got.Online != 1 {
+		t.Fatalf("rejected pings changed the count: %+v", got)
+	}
+}
+
+func TestPresenceRateLimit(t *testing.T) {
+	presenceTracker = presence.NewTracker(6*time.Minute, 1000)
+	presenceLimiter = newIPRateLimiter(time.Minute, 2, 100)
+	ts := setupTestServer()
+	defer ts.Close()
+
+	body := `{"id":"3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b","platform":"android","open":true}`
+	postPresence(t, ts, body, "")
+	postPresence(t, ts, body, "")
+	if res := postPresence(t, ts, body, ""); res.StatusCode != http.StatusTooManyRequests {
+		t.Fatalf("third ping in a minute: status %d, want 429", res.StatusCode)
+	}
+}
+
+func TestLiveBadge(t *testing.T) {
+	presenceTracker = presence.NewTracker(6*time.Minute, 1000)
+	presenceLimiter = newIPRateLimiter(time.Minute, 100, 100)
+	ts := setupTestServer()
+	defer ts.Close()
+
+	postPresence(t, ts, `{"id":"3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b","platform":"android","open":true}`, "")
+	presenceTracker.Sweep(clock.NowMs())
+
+	res, err := http.Get(ts.URL + "/api/stats/live/badge.svg")
+	if err != nil || res.StatusCode != http.StatusOK {
+		t.Fatalf("GET badge failed: status %v, err %v", res.StatusCode, err)
+	}
+	// GitHub's camo proxy only refetches when the origin says not to cache.
+	if got := res.Header.Get("Cache-Control"); !strings.Contains(got, "no-cache") {
+		t.Fatalf("badge must not be cached, got Cache-Control %q", got)
+	}
+	var body bytes.Buffer
+	_, _ = body.ReadFrom(res.Body)
+	// shields.io's own render of "LISTENING NOW: 1", so the badge looks unchanged.
+	want := `<svg xmlns="http://www.w3.org/2000/svg" width="156.5" height="28" role="img" aria-label="LISTENING NOW: 1"><title>LISTENING NOW: 1</title><g shape-rendering="crispEdges"><rect width="124.25" height="28" fill="#0d1117"/><rect x="124.25" width="32.25" height="28" fill="#fb4f67"/></g><g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-rendering="geometricPrecision" font-size="100"><text transform="scale(.1)" x="621.25" y="175" textLength="1002.5">LISTENING NOW</text><text transform="scale(.1)" x="1403.75" y="175" textLength="82.5" font-weight="bold">1</text></g></svg>`
+	if body.String() != want {
+		t.Fatalf("badge svg differs from shields:\n got %s\nwant %s", body.String(), want)
+	}
+}
+
+func TestRequestOrigin(t *testing.T) {
+	r := httptest.NewRequest("GET", "http://example.com/invite/ABC123", nil)
+	r.Header.Set("X-Forwarded-Proto", "https")
+
+	// Without JAM_TRUST_PROXY the forwarded proto is ignored.
+	if got := requestOrigin(r); got != "http://example.com" {
+		t.Errorf("Expected http://example.com, got %s", got)
+	}
+
+	config.TrustProxy = true
+	t.Cleanup(func() { config.TrustProxy = false })
+	if got := requestOrigin(r); got != "https://example.com" {
+		t.Errorf("Expected https://example.com, got %s", got)
+	}
+
+	// An explicit public origin wins over request headers.
+	config.PublicOrigin = "https://party.example.com"
+	t.Cleanup(func() { config.PublicOrigin = "" })
+	if got := requestOrigin(r); got != "https://party.example.com" {
+		t.Errorf("Expected https://party.example.com, got %s", got)
+	}
+
+	// When unset it falls back to inference.
+	config.PublicOrigin = ""
+	if got := requestOrigin(r); got != "https://example.com" {
+		t.Errorf("Expected fallback to https://example.com, got %s", got)
+	}
+}
+
+func TestInviteDeepLinkUsesPublicOrigin(t *testing.T) {
+	ts := setupTestServer()
+	defer ts.Close()
+
+	p, err := store.Create()
+	if err != nil {
+		t.Fatalf("Party creation failed: %v", err)
+	}
+
+	config.PublicOrigin = "https://party.example.com"
+	t.Cleanup(func() { config.PublicOrigin = "" })
+
+	res, err := http.Get(ts.URL + "/invite/" + p.Code)
+	if err != nil {
+		t.Fatalf("GET /invite/%s failed: %v", p.Code, err)
+	}
+	buf := new(bytes.Buffer)
+	_, _ = buf.ReadFrom(res.Body)
+	content := buf.String()
+
+	if !strings.Contains(content, "server=https%3A%2F%2Fparty.example.com") {
+		t.Errorf("Expected deep link to carry the public origin, got: %s", content)
+	}
+	if strings.Contains(content, "server=http%3A") {
+		t.Errorf("Expected no http server URL in deep link, got: %s", content)
+	}
+}
+
 func TestInviteLanding(t *testing.T) {
 	ts := setupTestServer()
 	defer ts.Close()
@@ -274,5 +510,43 @@ func TestInviteLanding(t *testing.T) {
 	}
 	if !strings.Contains(content, code) {
 		t.Errorf("Expected HTML content to contain party code %s", code)
+	}
+}
+
+// A browser offers the token as a subprotocol (it cannot set Authorization on
+// a WebSocket). The server answers with the protocol name alone, never the token.
+func TestWebSocketTokenAsSubprotocol(t *testing.T) {
+	ts := setupTestServer()
+	defer ts.Close()
+
+	b, _ := json.Marshal(map[string]string{"userId": "u1", "deviceId": "d1", "displayName": "Host"})
+	res, _ := http.Post(ts.URL+"/api/parties", "application/json", bytes.NewReader(b))
+	var created map[string]interface{}
+	_ = json.NewDecoder(res.Body).Decode(&created)
+	code := created["code"].(string)
+	token := created["token"].(string)
+
+	u, _ := url.Parse(ts.URL)
+	u.Scheme = "ws"
+	u.Path = fmt.Sprintf("/ws/parties/%s", code)
+
+	dialer := websocket.Dialer{Subprotocols: []string{socketProtocol, socketTokenPrefix + token}}
+	ws, resp, err := dialer.Dial(u.String(), nil)
+	if err != nil {
+		t.Fatalf("WebSocket with a subprotocol token failed: %v", err)
+	}
+	defer ws.Close()
+	if got := resp.Header.Get("Sec-WebSocket-Protocol"); got != socketProtocol {
+		t.Fatalf("expected the server to answer %q, got %q", socketProtocol, got)
+	}
+	var welcome map[string]interface{}
+	_ = ws.SetReadDeadline(time.Now().Add(2 * time.Second))
+	if err := ws.ReadJSON(&welcome); err != nil || welcome["type"] != protocol.FrameWelcome {
+		t.Fatalf("expected a welcome frame, got %v (%v)", welcome["type"], err)
+	}
+
+	bad := websocket.Dialer{Subprotocols: []string{socketProtocol, socketTokenPrefix + "nottherighttoken"}}
+	if _, resp, err := bad.Dial(u.String(), nil); err == nil || resp == nil || resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected 401 for a wrong subprotocol token, got %v", err)
 	}
 }
